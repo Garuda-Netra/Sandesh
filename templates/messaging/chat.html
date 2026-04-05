@@ -1,0 +1,779 @@
+﻿{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Messages — Sandesh{% endblock %}
+
+{% block content %}
+<!-- ══════════════════════════════════════════════════════════════
+     CHAT INTERFACE  —  NDM Cosmic Futuristic Edition v3
+     Full-height split layout: Sidebar | Message Panel
+══════════════════════════════════════════════════════════════ -->
+
+<!-- Hidden data for JS -->
+<script>
+  window.SDH_DATA = {
+    currentUser: "{{ current_user.username }}",
+    csrfToken: "{{ csrf_token }}",
+    historyUrl:   "{% url 'messaging:message_history' username='SDH_PH' %}".replace('SDH_PH/', ''),
+    uploadFileUrl:   "{% url 'messaging:upload_file' %}",
+    downloadFileUrl: "{% url 'messaging:download_file' file_id=0 %}".replace('0/', ''),
+    searchUsersUrl:  "{% url 'users:search_users' %}",
+    removeFromMyViewUrl: "{% url 'messaging:remove_from_my_view' message_id=0 %}".replace('0/', ''),
+    deleteForAllUrl:     "{% url 'messaging:delete_for_all'      message_id=0 %}".replace('0/', ''),
+    clearChatUrl:        "{% url 'messaging:clear_chat' username='SDH_PH' %}".replace('SDH_PH/', ''),
+    removeUserUrl:       "{% url 'users:remove_user' %}",
+    wsBase: "",
+  };
+
+  if (window.location.protocol === "https:") {
+    window.SDH_DATA.wsBase = "wss://" + window.location.host;
+  } else {
+    window.SDH_DATA.wsBase = "ws://" + window.location.host;
+  }
+</script>
+
+<!-- ── Chat Root ─────────────────────────────────────────────── -->
+<div class="sdh-chat-wrap flex h-[calc(100vh-3.5rem)] overflow-hidden relative">
+
+  <!-- Cosmic ambient background -->
+  <div class="sdh-cosmic-bg" aria-hidden="true">
+    <div class="sdh-orb sdh-orb-1"></div>
+    <div class="sdh-orb sdh-orb-2"></div>
+    <div class="sdh-orb sdh-orb-3"></div>
+    <div class="sdh-orb sdh-orb-4"></div>
+    <!-- CSS-only floating particles -->
+    <div class="sdh-particles">
+      {% for i in "x"|rjust:"40" %}
+      <span class="sdh-particle" data-index="{{ forloop.counter0 }}"></span>
+      {% endfor %}
+    </div>
+    <style>
+      {% for i in "x"|rjust:"40" %}
+      .sdh-particle[data-index="{{ forloop.counter0 }}"] {
+        --delay: {{ forloop.counter0 }};
+        --x: {{ forloop.counter }};
+      }
+      {% endfor %}
+    </style>
+    <!-- Subtle grid overlay -->
+    <div class="sdh-grid-overlay"></div>
+  </div>
+
+  <!-- ── LEFT SIDEBAR ────────────────────────────────────────── -->
+  <aside id="sidebar"
+         class="sdh-sidebar flex flex-col w-72 min-w-0 flex-shrink-0
+                transition-all duration-300 z-20
+                sm:relative sm:translate-x-0
+                fixed -translate-x-full h-full top-14"
+         aria-label="Contacts">
+
+    <!-- Sidebar header -->
+    <div class="sdh-sidebar-hdr flex items-center justify-between h-16 px-5 flex-shrink-0">
+      <div class="flex items-center gap-2.5">
+        <!-- Sandesh glyph -->
+        <span class="sdh-sandesh-glyph select-none" aria-hidden="true">
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 2C6.477 2 2 6.477 2 12c0 1.821.487 3.53 1.338 5L2.5 21l4.5-1.338A9.954 9.954 0 0012 22c5.523 0 10-4.477 10-10S17.523 2 12 2zm-1 13H8a1 1 0 010-2h3a1 1 0 010 2zm5-4H8a1 1 0 010-2h8a1 1 0 010 2z"/>
+          </svg>
+        </span>
+        <h2 class="text-sm font-semibold tracking-wider uppercase" style="color:var(--c-text)">Messages</h2>
+        <!-- Online user count badge -->
+        <span id="onlineCountBadge"
+              class="hidden sdh-online-count-badge text-[10px] font-semibold leading-none
+                     px-2 py-0.5 rounded-full">
+        </span>
+      </div>
+      <button onclick="SDH.Chat.closeSidebar()"
+              class="sm:hidden sdh-icon-btn p-1.5 rounded-lg transition-all"
+              style="color:var(--c-muted)">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Search -->
+    <div class="px-4 py-3 flex-shrink-0" style="border-bottom:1px solid rgba(37,37,80,0.45)">
+      <div class="relative group">
+        <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pointer-events-none transition-colors duration-200 group-focus-within:text-divine-gold"
+             style="color:var(--c-muted)"
+             fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+        </svg>
+        <input type="text" id="searchUsers"
+               placeholder="Search users…"
+               oninput="SDH.Chat.filterUsers(this.value)"
+               class="sdh-search-input w-full pl-9 pr-3 py-2.5 text-xs"
+               style="color:var(--c-text)" />
+      </div>
+    </div>
+
+    <!-- Notification permission prompt (hidden by default) -->
+    <div id="notifPrompt"
+         class="hidden items-center gap-2 px-4 py-2.5 flex-shrink-0"
+         style="border-bottom:1px solid rgba(212,175,55,0.1); background:rgba(212,175,55,0.04)">
+      <svg class="w-3.5 h-3.5 flex-shrink-0" style="color:rgba(212,175,55,0.7)"
+           fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0
+                 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159
+                 c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+      </svg>
+      <p class="text-[11px] flex-1" style="color:rgba(136,136,170,0.8)">Enable notifications for messages</p>
+      <button onclick="SDH.Chat.showToast('Notifications enabled ✓','success');document.getElementById('notifPrompt').classList.add('hidden');Notification.requestPermission();"
+              class="sdh-notif-allow-btn text-[11px] font-semibold transition-colors"
+              style="color:var(--c-gold)">
+        Allow
+      </button>
+    </div>
+
+    <!-- User list -->
+    <div id="userList" class="flex-1 overflow-y-auto sdh-user-list-scroll">
+      {% if users %}
+      {% for item in users %}
+      <!-- User item: outer div so we can nest context-menu button -->
+      <div id="user-item-{{ item.user.username }}"
+           class="sdh-user-item user-item relative w-full flex items-center gap-3 px-4 py-3.5
+                  group/usr"
+           data-username="{{ item.user.username }}"
+           data-userid="{{ item.user.id }}">
+
+        <!-- Clickable main area -->
+        <div class="flex items-center gap-3 flex-1 min-w-0 cursor-pointer"
+             onclick="SDH.Chat.selectUser('{{ item.user.username }}', '{{ item.user.id }}')">
+
+          <!-- Avatar -->
+          <div class="relative flex-shrink-0">
+            {% if item.user.profile.avatar %}
+            <img src="{{ item.user.profile.avatar.url }}" alt="{{ item.user.username }}"
+                 class="sdh-avatar w-11 h-11 rounded-full object-cover" />
+            {% else %}
+            <div class="sdh-avatar sdh-avatar-initial w-11 h-11 rounded-full
+                        flex items-center justify-center text-sm font-bold select-none">
+              {{ item.user.username|slice:":1"|upper }}
+            </div>
+            {% endif %}
+            <!-- Online indicator -->
+            <span id="online-dot-{{ item.user.username }}"
+                  class="sdh-online-dot absolute bottom-0 right-0 w-3 h-3 rounded-full
+                         border-2 flex-shrink-0
+                         {% if item.is_online %}sdh-online-dot--on{% else %}sdh-online-dot--off{% endif %}">
+            </span>
+          </div>
+
+          <!-- Name + status -->
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center justify-between gap-2">
+              <span class="sdh-user-name text-sm font-semibold truncate" style="color:var(--c-text)">
+                {{ item.user.username }}
+              </span>
+              <span id="unread-{{ item.user.username }}"
+                    class="sdh-unread-badge hidden flex-shrink-0 text-[10px] font-bold leading-none
+                           px-1.5 py-0.5 rounded-full">
+              </span>
+            </div>
+            <p id="last-seen-{{ item.user.username }}"
+               class="text-[11px] truncate mt-0.5
+                      {% if item.is_online %}sdh-status-online{% else %}sdh-status-offline{% endif %}">
+              {% if item.is_online %}
+              &#9679; Active
+              {% elif item.last_seen %}
+              Last seen {{ item.last_seen|date:"M j" }}
+              {% else %}
+              Ready to chat
+              {% endif %}
+            </p>
+          </div>
+
+        </div><!-- /clickable area -->
+
+        <!-- Three-dot context menu (visible on hover) -->
+        <div class="user-ctx-wrap relative flex-shrink-0 z-10
+                    opacity-0 group-hover/usr:opacity-100 transition-opacity duration-150"
+             onclick="event.stopPropagation()">
+          <button onclick="SDH.Chat._toggleUserMenu(this)"
+                  class="w-7 h-7 flex items-center justify-center rounded-full
+                         text-divine-muted/50 hover:text-divine-gold hover:bg-divine-card/80
+                         border border-transparent hover:border-divine-border/60
+                         transition-all leading-none select-none"
+                  title="User options">⋯</button>
+          <div class="user-ctx-dropdown hidden z-[9999]
+                      w-52 bg-divine-card border border-divine-border/80 rounded-xl
+                      shadow-2xl overflow-hidden py-1">
+            <button onclick="SDH.Chat._confirmRemoveUser('{{ item.user.id }}', '{{ item.user.username }}')"
+                    class="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm
+                           text-divine-muted hover:text-divine-text hover:bg-divine-surface
+                           transition-colors text-left">
+              <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M13 7a4 4 0 11-8 0 4 4 0 018 0zM9 14a6 6 0 00-6 6v1h12v-1
+                         a6 6 0 00-6-6zM21 12h-6"/>
+              </svg>
+              Remove from My List
+            </button>
+          </div>
+        </div><!-- /context menu -->
+
+      </div><!-- /user-item -->
+      {% endfor %}
+      {% else %}
+      <div class="flex flex-col items-center justify-center h-full text-center p-6"
+           style="color:var(--c-muted)">
+        <div class="text-5xl mb-4 opacity-30" style="filter:drop-shadow(0 0 12px rgba(212,175,55,0.3))">👤</div>
+        <p class="text-sm font-medium">No contacts yet</p>
+        <p class="text-xs mt-1 opacity-60">Register more users to start messaging</p>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Sidebar footer: current user -->
+    <div class="sdh-user-footer flex items-center gap-3 px-4 py-3.5 flex-shrink-0">
+      <div class="sdh-avatar-self w-9 h-9 rounded-full flex items-center justify-center
+                  text-sm font-bold select-none flex-shrink-0">
+        {{ current_user.username|slice:":1"|upper }}
+      </div>
+      <div class="flex-1 min-w-0">
+        <p class="text-xs font-semibold truncate" style="color:var(--c-text)">{{ current_user.username }}</p>
+        <p class="text-[11px]" style="color:var(--c-muted)">Chat</p>
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- Sidebar overlay (mobile) -->
+  <div id="sidebarOverlay"
+       onclick="SDH.Chat.closeSidebar()"
+       class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-10 sm:hidden"></div>
+
+  <!-- ── RIGHT PANEL ─────────────────────────────────────────── -->
+  <div class="sdh-chat-panel flex flex-col flex-1 min-w-0">
+
+    <!-- Chat header -->
+    <header id="chatHeader"
+            class="sdh-chat-header flex flex-col flex-shrink-0">
+
+      <div class="flex items-center h-16 px-5">
+
+        <!-- Mobile sidebar toggle -->
+        <button onclick="SDH.Chat.openSidebar()"
+                class="sm:hidden mr-3 sdh-icon-btn p-2 rounded-xl transition-all"
+                style="color:var(--c-muted)">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+          </svg>
+        </button>
+
+        <!-- Contact info -->
+        <div class="flex items-center gap-3.5 flex-1 min-w-0">
+          <!-- Chat header avatar -->
+          <div id="chatAvatar"
+               class="sdh-chat-avatar w-10 h-10 rounded-full
+                      flex items-center justify-center text-sm font-bold select-none flex-shrink-0">
+            —
+          </div>
+          <div class="min-w-0">
+            <div class="flex items-center gap-2.5 flex-wrap">
+              <p id="chatUsername" class="text-sm font-bold tracking-wide" style="color:var(--c-text)">Select a contact</p>
+
+            </div>
+            <p id="chatTypingStatus" class="text-xs mt-0.5" style="color:var(--c-muted)">
+              Choose someone to start messaging
+            </p>
+          </div>
+        </div>
+
+        <!-- Call buttons (visible when chat open) -->
+        <div id="callButtons" class="hidden flex items-center gap-2">
+          <button onclick="SDH.WebRTC.startCall('voice', 'medium')"
+                  title="Voice Call"
+                  class="sdh-call-btn sdh-voice-btn p-2.5 rounded-xl transition-all">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13
+                       a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1
+                       C9.716 21 3 14.284 3 6V5z"/>
+            </svg>
+          </button>
+          <button onclick="SDH.WebRTC.startCall('video', 'medium')"
+                  title="Video Call"
+                  class="sdh-call-btn sdh-video-btn p-2.5 rounded-xl transition-all">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M15 10l4.553-2.069A1 1 0 0121 8.868v6.264a1 1 0 01-1.447.894L15 14M5 18h8
+                       a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+            </svg>
+          </button>
+          <!-- Clear All Chat -->
+          <button onclick="SDH.Chat._confirmClearChat()"
+                  title="Clear All Chat"
+                  class="sdh-call-btn p-2.5 rounded-xl transition-all"
+                  style="color:rgba(239,68,68,0.65);" >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7
+                       m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+            </svg>
+          </button>
+        </div>
+
+      </div><!-- /header inner row -->
+
+      <!-- Glow divider line -->
+      <div class="sdh-header-divider h-px w-full"></div>
+
+    </header>
+
+    <!-- ── Messages Area ──────────────────────────────────────── -->
+    <div id="messagesContainer"
+         class="sdh-messages-area flex-1 overflow-y-auto px-5 py-5 space-y-3"
+         style="scroll-behavior:smooth;">
+
+      <!-- Empty state -->
+      <div id="emptyState" class="flex flex-col items-center justify-center h-full text-center sdh-empty-state">
+
+        <!-- Orb: glow disk + conic border ring + icon -->
+        <div class="sdh-empty-orb mb-7">
+          <div class="sdh-orb-glow"></div>
+          <div class="sdh-orb-ring"></div>
+          <div class="sdh-sandesh-hero select-none">
+            <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-full h-full">
+              <defs>
+                <linearGradient id="bbFill" x1="11" y1="8" x2="61" y2="42" gradientUnits="userSpaceOnUse">
+                  <stop offset="0%" stop-color="#c084fc" stop-opacity="0.28"/>
+                  <stop offset="100%" stop-color="#7c3aed" stop-opacity="0.07"/>
+                </linearGradient>
+                <linearGradient id="bbStroke" x1="11" y1="8" x2="61" y2="42" gradientUnits="userSpaceOnUse">
+                  <stop offset="0%" stop-color="#c084fc"/>
+                  <stop offset="100%" stop-color="#818cf8"/>
+                </linearGradient>
+                <linearGradient id="fbFill" x1="3" y1="22" x2="53" y2="56" gradientUnits="userSpaceOnUse">
+                  <stop offset="0%" stop-color="#818cf8" stop-opacity="0.22"/>
+                  <stop offset="100%" stop-color="#a855f7" stop-opacity="0.05"/>
+                </linearGradient>
+                <linearGradient id="fbStroke" x1="3" y1="22" x2="53" y2="56" gradientUnits="userSpaceOnUse">
+                  <stop offset="0%" stop-color="#a855f7"/>
+                  <stop offset="100%" stop-color="#c084fc"/>
+                </linearGradient>
+                <linearGradient id="dotGrad" x1="0" y1="0" x2="0" y2="4.4" gradientUnits="userSpaceOnUse">
+                  <stop offset="0%" stop-color="#f3e8ff"/>
+                  <stop offset="100%" stop-color="#c084fc"/>
+                </linearGradient>
+              </defs>
+              <!-- Back bubble -->
+              <path d="M52 8H20a9 9 0 00-9 9v15a9 9 0 009 9h3l-2 7 9-7h22a9 9 0 009-9V17a9 9 0 00-9-9z"
+                    fill="url(#bbFill)" stroke="url(#bbStroke)" stroke-width="1.5" stroke-linejoin="round"/>
+              <!-- Front bubble -->
+              <path d="M44 22H12a9 9 0 00-9 9v13a9 9 0 009 9h3l-2 7 9-7h22a9 9 0 009-9V31a9 9 0 00-9-9z"
+                    fill="url(#fbFill)" stroke="url(#fbStroke)" stroke-width="1.5" stroke-linejoin="round"/>
+              <!-- Three dots -->
+              <circle cx="21" cy="37.5" r="2.3" fill="url(#dotGrad)"/>
+              <circle cx="28" cy="37.5" r="2.3" fill="url(#dotGrad)"/>
+              <circle cx="35" cy="37.5" r="2.3" fill="url(#dotGrad)"/>
+            </svg>
+          </div>
+        </div>
+
+        <!-- Fade divider -->
+        <div class="sdh-empty-divider mb-5"></div>
+
+        <!-- Brand chip -->
+        <span class="sdh-empty-badge mb-3">SANDESH</span>
+
+        <!-- Gradient headline -->
+        <p class="sdh-empty-title mb-2">Select a contact to begin</p>
+        <p class="sdh-empty-sub">Pick a conversation from the sidebar to start chatting</p>
+
+      </div>
+
+    </div>
+
+    <!-- Typing indicator -->
+    <div id="typingBubble" class="hidden px-5 pb-2.5">
+      <div class="sdh-typing-pill inline-flex items-center gap-2.5 px-4 py-2.5 rounded-2xl">
+        <span id="typingName" class="text-xs font-semibold" style="color:var(--c-gold)"></span>
+        <span class="flex gap-1 items-end">
+          <span class="sdh-typing-dot" style="animation-delay:0s"></span>
+          <span class="sdh-typing-dot" style="animation-delay:0.2s"></span>
+          <span class="sdh-typing-dot" style="animation-delay:0.4s"></span>
+        </span>
+        <span class="text-[11px]" style="color:var(--c-muted)">is typing</span>
+      </div>
+    </div>
+
+    <!-- ── Input Bar ──────────────────────────────────────────── -->
+    <div id="inputBar"
+         class="sdh-input-bar flex items-end gap-2.5 px-4 py-3.5 flex-shrink-0">
+
+      <!-- File attachment -->
+      <label title="Attach file (max 20MB)"
+             class="sdh-action-btn flex-shrink-0 p-3 rounded-2xl cursor-pointer">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586
+                   a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/>
+        </svg>
+        <input type="file" id="fileInput" class="hidden"
+               accept="image/*,video/*,.pdf,.doc,.docx,.txt,.zip,.rar"
+               onchange="SDH.Chat.handleFileSelect(this)" />
+      </label>
+
+      <!-- Message input -->
+      <div class="flex-1 relative sdh-input-wrap">
+        <textarea id="messageInput"
+                  rows="1"
+                  placeholder="Type a divine message… (Enter to send)"
+                  oninput="SDH.Chat.onInput(this)"
+                  onkeydown="SDH.Chat.onKeyDown(event)"
+                  class="sdh-message-input w-full resize-none px-4 py-3 text-sm
+                         max-h-32 overflow-y-auto leading-relaxed"
+                  style="min-height:46px; color:var(--c-text)"></textarea>
+
+        <!-- File preview strip -->
+        <div id="filePreview"
+             class="hidden mt-2 sdh-file-preview p-2.5 rounded-xl text-xs flex items-center gap-2">
+          <svg class="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+          </svg>
+          <span id="filePreviewName" class="truncate flex-1"></span>
+          <button onclick="SDH.Chat.clearFile()" class="hover:text-red-400 transition-colors flex-shrink-0">✕</button>
+        </div>
+      </div>
+
+      <!-- Emoji -->
+      <button onclick="SDH.Chat.toggleEmojiPicker()"
+              class="sdh-action-btn flex-shrink-0 p-3 rounded-2xl text-base leading-none select-none">
+        😊
+      </button>
+
+      <!-- Send button -->
+      <button id="sendBtn"
+              onclick="SDH.Chat.sendMessage()"
+              class="sdh-send-btn flex-shrink-0 p-3 rounded-2xl
+                     disabled:opacity-40 disabled:cursor-not-allowed"
+              title="Send (Enter)">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+        </svg>
+      </button>
+
+    </div>
+
+  </div><!-- /chat panel -->
+
+</div><!-- /chat root -->
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     WEBRTC CALL OVERLAY
+══════════════════════════════════════════════════════════════ -->
+<div id="callOverlay"
+     class="hidden fixed inset-0 z-50 flex flex-col items-center justify-center"
+     style="background:rgba(7,7,26,0.96);backdrop-filter:blur(24px)">
+
+  <!-- Incoming call panel -->
+  <div id="incomingCallPanel" class="hidden flex-col items-center gap-7 text-center">
+    <!-- Pulsing avatar ring -->
+    <div class="relative flex items-center justify-center">
+      <div class="absolute w-28 h-28 rounded-full border border-green-500/20 animate-ping"
+           style="animation-duration:2s"></div>
+      <div class="absolute w-20 h-20 rounded-full border border-green-500/30 animate-ping"
+           style="animation-duration:1.5s; animation-delay:0.3s"></div>
+      <div class="w-16 h-16 rounded-full flex items-center justify-center text-4xl"
+           style="background:linear-gradient(135deg,rgba(74,222,128,0.2),rgba(22,163,74,0.15));
+                  border:2px solid rgba(74,222,128,0.35);box-shadow:0 0 32px rgba(74,222,128,0.2)">
+        📞
+      </div>
+    </div>
+    <div>
+      <p class="text-xs uppercase tracking-widest mb-1" style="color:var(--c-muted)">Incoming Call</p>
+      <p id="callerName" class="text-2xl font-bold" style="color:var(--c-text)"></p>
+      <p id="callTypeLabel" class="text-sm mt-1" style="color:var(--c-muted)"></p>
+    </div>
+    <div class="flex gap-6">
+      <button onclick="SDH.WebRTC.acceptCall()"
+              class="sdh-call-accept w-16 h-16 rounded-full flex items-center justify-center text-white text-xl
+                     transition-all transform hover:scale-110">
+        ✓
+      </button>
+      <button onclick="SDH.WebRTC.rejectCall()"
+              class="sdh-call-reject w-16 h-16 rounded-full flex items-center justify-center text-white text-xl
+                     transition-all transform hover:scale-110">
+        ✕
+      </button>
+    </div>
+  </div>
+
+  <!-- Active call panel -->
+  <div id="activeCallPanel" class="hidden w-full h-full flex flex-col">
+
+    <!-- Video grid -->
+    <div class="flex-1 relative bg-black">
+      <video id="remoteVideo" autoplay playsinline class="w-full h-full object-cover"></video>
+
+      <!-- Local video (PIP) -->
+      <video id="localVideo" autoplay playsinline muted
+             class="absolute bottom-4 right-4 w-36 h-28 object-cover rounded-2xl"
+             style="border:2px solid rgba(212,175,55,0.5);box-shadow:0 0 20px rgba(0,0,0,0.6)"></video>
+
+      <!-- Audio-only overlay -->
+      <div id="audioCallVisual"
+           class="hidden absolute inset-0 flex flex-col items-center justify-center"
+           style="background:var(--c-deep)">
+        <div class="text-7xl mb-5 animate-float">🎵</div>
+        <p id="activeCallUser" class="text-2xl font-bold" style="color:var(--c-text)"></p>
+        <div class="mt-5 flex gap-1 items-end h-8" id="audioVisualizer">
+          {% for i in "12345678" %}
+          <div class="w-1.5 rounded-full animate-pulse"
+               style="background:linear-gradient(to top,var(--c-gold),var(--c-amber));
+                      height:{{ forloop.counter|add:"8" }}px;
+                      animation-delay:{{ forloop.counter0 }}00ms;"></div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Call controls -->
+    <div class="flex items-center justify-center gap-4 py-4 px-6"
+         style="background:var(--c-surface);border-top:1px solid rgba(37,37,80,0.5)">
+
+      <button id="btnMute" onclick="SDH.WebRTC.toggleMute()" title="Mute"
+              class="call-control-btn bg-divine-card text-divine-muted" style="border-color:var(--c-border)">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 016 0v6a3 3 0 01-3 3z"/>
+        </svg>
+      </button>
+
+      <button id="btnCam" onclick="SDH.WebRTC.toggleCamera()" title="Camera"
+              class="call-control-btn bg-divine-card text-divine-muted" style="border-color:var(--c-border)">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M15 10l4.553-2.069A1 1 0 0121 8.868v6.264a1 1 0 01-1.447.894L15 14
+                   M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+        </svg>
+      </button>
+
+      <select id="qualitySelect" onchange="SDH.WebRTC.changeQuality(this.value)"
+              class="px-3 py-2 rounded-xl text-xs focus:outline-none"
+              style="background:var(--c-card);border:1px solid var(--c-border);color:var(--c-muted)">
+        <option value="medium">Medium Quality</option>
+        <option value="high">High Quality</option>
+      </select>
+
+      <button onclick="SDH.WebRTC.endCall()"
+              class="call-control-btn sdh-call-end-btn border-0 text-white">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M16 8l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2
+                   M5 3a2 2 0 00-2 2v1c0 8.284 6.716 15 15 15h1a2 2 0 002-2v-3.28
+                   a1 1 0 00-.684-.948l-4.493-1.498a1 1 0 00-1.21.502l-1.13 2.257
+                   a11.042 11.042 0 01-5.516-5.517l2.257-1.128a1 1 0 00.502-1.21
+                   L9.228 3.683A1 1 0 008.279 3H5z"/>
+        </svg>
+      </button>
+
+    </div>
+  </div>
+
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     EMOJI PICKER (lightweight)
+══════════════════════════════════════════════════════════════ -->
+<div id="emojiPicker"
+     class="sdh-emoji-picker hidden fixed z-40 p-3 rounded-2xl
+            grid grid-cols-8 gap-1"
+     style="bottom:80px; right:24px; width:280px;">
+  {% with emojis="😊😂❤️🔥⚡🙏✨🌙🌟💫🎵🎶👑🦋🌺🙌😍🤣😎💎🚀🌈🎯🔮💡⚔️🛡️🌸" %}
+  {% for char in emojis %}
+  <button class="sdh-emoji-btn w-8 h-8 flex items-center justify-center rounded-xl text-lg"
+          onclick="SDH.Chat.insertEmoji('{{ char }}')">{{ char }}</button>
+  {% endfor %}
+  {% endwith %}
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     CLEAR ALL CHAT — Confirmation Modal
+══════════════════════════════════════════════════════════════ -->
+<div id="clearChatModal"
+     class="hidden fixed inset-0 z-[60] flex items-center justify-center px-4"
+     style="background:rgba(2,4,8,0.82);backdrop-filter:blur(8px);"
+     onclick="if(event.target===this)this.classList.add('hidden')">
+
+  <div class="w-full max-w-sm bg-divine-card border border-divine-border rounded-2xl shadow-2xl p-7 animate-msg-appear">
+    <!-- Icon -->
+    <div class="flex items-center justify-center w-12 h-12 mx-auto mb-5 rounded-full"
+         style="background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.3);">
+      <svg class="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+      </svg>
+    </div>
+
+    <!-- Heading -->
+    <h3 class="text-base font-semibold text-center text-divine-text mb-2">
+      Clear All Chat
+    </h3>
+
+    <!-- Body -->
+    <p class="text-sm text-center text-divine-muted leading-relaxed mb-6">
+      This will permanently delete <strong class="text-divine-text">all messages</strong>
+      in this conversation for both participants, including any shared files.
+      This action cannot be undone.
+    </p>
+
+    <!-- Actions -->
+    <div class="flex gap-3">
+      <button onclick="document.getElementById('clearChatModal').classList.add('hidden')"
+              class="flex-1 py-2.5 rounded-xl border text-sm font-medium transition-all
+                     hover:bg-divine-surface"
+              style="border-color:var(--c-border);color:var(--c-muted)">
+        Cancel
+      </button>
+      <button onclick="SDH.Chat.executeClearChat()"
+              class="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all
+                     bg-red-600/90 hover:bg-red-600 text-white border border-red-700/60">
+        Clear All
+      </button>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     REMOVE USER FROM MY LIST — Confirmation Modal
+══════════════════════════════════════════════════════════════ -->
+<div id="removeUserModal"
+     class="hidden fixed inset-0 z-[60] flex items-center justify-center px-4"
+     style="background:rgba(2,4,8,0.82);backdrop-filter:blur(8px);"
+     onclick="if(event.target===this)this.classList.add('hidden')">
+
+  <div class="w-full max-w-sm bg-divine-card border border-divine-border rounded-2xl shadow-2xl p-7 animate-msg-appear">
+    <!-- Icon -->
+    <div class="flex items-center justify-center w-12 h-12 mx-auto mb-5 rounded-full"
+         style="background:rgba(139,92,246,0.12);border:1px solid rgba(139,92,246,0.3);">
+      <svg class="w-6 h-6" style="color:rgba(139,92,246,0.85)" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M13 7a4 4 0 11-8 0 4 4 0 018 0zM9 14a6 6 0 00-6 6v1h12v-1a6 6 0 00-6-6zM21 12h-6"/>
+      </svg>
+    </div>
+
+    <!-- Heading -->
+    <h3 class="text-base font-semibold text-center text-divine-text mb-2">
+      Remove User
+    </h3>
+
+    <!-- Body -->
+    <p class="text-sm text-center text-divine-muted leading-relaxed mb-1">
+      Are you sure you want to remove
+      <strong id="removeUserModalName" class="text-divine-text"></strong>
+      from your list?
+    </p>
+    <p class="text-xs text-center mb-6" style="color:rgba(136,136,170,0.55)">
+      This will not delete their account or your chat history.
+      Only you will stop seeing them.
+    </p>
+
+    <!-- Actions -->
+    <div class="flex gap-3">
+      <button onclick="document.getElementById('removeUserModal').classList.add('hidden')"
+              class="flex-1 py-2.5 rounded-xl border text-sm font-medium transition-all
+                     hover:bg-divine-surface"
+              style="border-color:var(--c-border);color:var(--c-muted)">
+        Cancel
+      </button>
+      <button onclick="SDH.Chat.executeRemoveUser()"
+              class="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all text-white sdh-remove-btn"
+              style="background:rgba(139,92,246,0.75);border:1px solid rgba(139,92,246,0.5);">
+        Remove
+      </button>
+    </div>
+  </div>
+
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     DELETE FOR ALL PARTICIPANTS — Confirmation Modal
+══════════════════════════════════════════════════════════════ -->
+<div id="deleteForAllModal"
+     class="hidden fixed inset-0 z-[60] flex items-center justify-center px-4"
+     style="background:rgba(2,4,8,0.82);backdrop-filter:blur(8px);"
+     onclick="if(event.target===this)this.classList.add('hidden')">
+
+  <div class="w-full max-w-sm bg-divine-card border border-divine-border rounded-2xl shadow-2xl p-7 animate-msg-appear">
+    <!-- Icon -->
+    <div class="flex items-center justify-center w-12 h-12 mx-auto mb-5 rounded-full"
+         style="background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.3);">
+      <svg class="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+      </svg>
+    </div>
+
+    <!-- Heading -->
+    <h3 class="text-base font-semibold text-center text-divine-text mb-2">
+      Delete for All Participants
+    </h3>
+
+    <!-- Body -->
+    <p class="text-sm text-center text-divine-muted leading-relaxed mb-6">
+      Are you sure you want to permanently delete this message for all participants?
+      This action cannot be undone.
+    </p>
+
+    <!-- Actions -->
+    <div class="flex gap-3">
+      <button onclick="document.getElementById('deleteForAllModal').classList.add('hidden')"
+              class="flex-1 py-2.5 rounded-xl border text-sm font-medium transition-all
+                     hover:bg-divine-surface"
+              style="border-color:var(--c-border);color:var(--c-muted)">
+        Cancel
+      </button>
+      <button onclick="SDH.Chat.executeDeleteForAll()"
+              class="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all
+                     bg-red-600/90 hover:bg-red-600 text-white border border-red-700/60">
+        Delete for All
+      </button>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+
+{% block extra_js %}
+<script src="{% static 'js/fileUpload.js' %}"></script>
+<script src="{% static 'js/websocket.js' %}"></script>
+<script src="{% static 'js/chat.js' %}"></script>
+<script src="{% static 'js/webrtc.js' %}"></script>
+<script src="{% static 'js/userSearch.js' %}"></script>
+<script>
+  // ── Bootstrap the chat application ──────────────────────────────────────
+  document.addEventListener('DOMContentLoaded', async function () {
+    // Open the persistent WebRTC signaling socket immediately so this user
+    // can receive incoming calls even before selecting any contact.
+    if (window.SDH_DATA?.currentUser) {
+      SDH.WebRTC?.init(window.SDH_DATA.currentUser);
+    }
+
+    try {
+      await SDH.Chat.initializeChat();
+    } catch (e) {
+      console.error('[NDM] initializeChat error:', e);
+    }
+
+    // Restore the last active conversation (username + numeric user ID)
+    const lastUser = sessionStorage.getItem('ndm_last_chat');
+    const lastId   = sessionStorage.getItem('ndm_last_chat_id');
+    if (lastUser && lastId) {
+      SDH.Chat.selectUser(lastUser, parseInt(lastId, 10));
+    }
+  });
+</script>
+{% endblock %}

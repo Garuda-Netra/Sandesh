@@ -1,0 +1,764 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Calls — Sandesh{% endblock %}
+
+{% block content %}
+<!-- ══════════════════════════════════════════════════════════════
+     SDH CALL INTERFACE
+     Full-height split: Contacts Sidebar | Call Stage
+     All sub-panels are toggled via JS — no overlays needed.
+══════════════════════════════════════════════════════════════ -->
+
+<!-- Hidden data block consumed by JS modules -->
+<script>
+  window.SDH_DATA = {
+    currentUser:  "{{ current_user.username }}",
+    csrfToken:    "{{ csrf_token }}",
+    historyUrl:   "{% url 'messaging:message_history' username='SDH_PH' %}".replace('SDH_PH/', ''),
+    wsBase: window.location.protocol === 'https:'
+          ? 'wss://' + window.location.host
+          : 'ws://'  + window.location.host,
+  };
+  const SDH_PRESELECT = "{{ preselect_username|escapejs }}";
+</script>
+
+<!-- Root layout -->
+<div class="flex h-[calc(100vh-3.5rem)] overflow-hidden bg-divine-deep">
+
+  <!-- ════════════════════════════════════════════════════════════
+       LEFT SIDEBAR – Contacts
+  ════════════════════════════════════════════════════════════ -->
+  <aside id="callSidebar"
+         class="flex flex-col w-72 min-w-0 flex-shrink-0
+                bg-divine-surface border-r border-divine-border z-20
+                sm:relative sm:translate-x-0
+                fixed -translate-x-full h-full top-14 transition-transform duration-300"
+         aria-label="Contacts">
+
+    <!-- Sidebar header -->
+    <div class="flex items-center justify-between h-16 px-5 border-b border-divine-border flex-shrink-0">
+      <div class="flex items-center gap-2">
+        <span class="text-divine-gold text-base">📞</span>
+        <h2 class="text-sm font-semibold text-divine-text tracking-wider uppercase">Contacts</h2>
+      </div>
+      <button onclick="SDHCall.closeSidebar()"
+              class="sm:hidden p-1.5 rounded-lg text-divine-muted hover:text-divine-gold hover:bg-divine-card transition-all">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Search -->
+    <div class="px-4 py-3 border-b border-divine-border flex-shrink-0">
+      <div class="relative">
+        <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-divine-muted pointer-events-none"
+             fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+        </svg>
+        <input type="text" id="callSearchUsers"
+               placeholder="Search contacts…"
+               oninput="SDHCall.filterContacts(this.value)"
+               class="w-full pl-8 pr-3 py-2 rounded-lg text-xs
+                      bg-divine-card border border-divine-border
+                      text-divine-text placeholder-divine-muted
+                      focus:outline-none focus:border-divine-gold transition-colors" />
+      </div>
+    </div>
+
+    <!-- Contact list -->
+    <div id="callUserList" class="flex-1 overflow-y-auto">
+      {% if users %}
+        {% for item in users %}
+        <button onclick="SDHCall.selectContact('{{ item.user.username }}')"
+                id="call-item-{{ item.user.username }}"
+                class="call-contact-item w-full flex items-center gap-3 px-4 py-3.5
+                       text-left transition-all
+                       hover:bg-divine-card/70 border-b border-divine-border/30"
+                data-username="{{ item.user.username }}">
+
+          <div class="relative flex-shrink-0">
+            {% if item.user.profile.avatar %}
+            <img src="{{ item.user.profile.avatar.url }}" alt="{{ item.user.username }}"
+                 class="w-10 h-10 rounded-full object-cover border border-divine-border" />
+            {% else %}
+            <div class="w-10 h-10 rounded-full bg-divine-gold/15 border border-divine-border
+                        flex items-center justify-center text-divine-gold text-sm font-semibold">
+              {{ item.user.username|slice:":1"|upper }}
+            </div>
+            {% endif %}
+            <span id="call-online-{{ item.user.username }}"
+                  class="sdh-online-dot absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-divine-surface
+                         {% if item.is_online %}sdh-online-dot--on{% else %}sdh-online-dot--off{% endif %}">
+            </span>
+          </div>
+
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-medium text-divine-text truncate">{{ item.user.username }}</p>
+            <p class="text-xs text-divine-muted mt-0.5">
+              {% if item.is_online %}
+              <span class="text-green-500/70">&#9679; Active</span>
+              {% else %}
+              <span class="text-divine-muted/60">Inactive</span>
+              {% endif %}
+            </p>
+          </div>
+
+        </button>
+        {% endfor %}
+      {% else %}
+        <div class="flex flex-col items-center justify-center h-full text-center p-6 text-divine-muted">
+          <div class="text-4xl mb-3">👤</div>
+          <p class="text-sm">No contacts registered.</p>
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- Sidebar footer: current user -->
+    <div class="flex items-center gap-3 px-4 py-3 border-t border-divine-border
+                flex-shrink-0 bg-divine-card/40">
+      <div class="w-9 h-9 rounded-full bg-divine-gold/20 border border-divine-gold/40
+                  flex items-center justify-center text-divine-gold text-sm font-bold flex-shrink-0">
+        {{ current_user.username|slice:":1"|upper }}
+      </div>
+      <div class="flex-1 min-w-0">
+        <p class="text-xs font-semibold text-divine-text truncate">{{ current_user.username }}</p>
+        <p class="text-xs text-divine-muted">Sandesh</p>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Sidebar overlay (mobile) -->
+  <div id="callSidebarOverlay"
+       onclick="SDHCall.closeSidebar()"
+       class="hidden fixed inset-0 bg-black/60 z-10 sm:hidden"></div>
+
+  <!-- ════════════════════════════════════════════════════════════
+       RIGHT PANEL – Call Stage
+  ════════════════════════════════════════════════════════════ -->
+  <div class="flex flex-col flex-1 min-w-0 relative">
+
+    <!-- ── Top Header ──────────────────────────────────────────── -->
+    <header class="flex items-center justify-between h-16 px-5
+                   border-b border-divine-border bg-divine-surface flex-shrink-0">
+
+      <!-- Mobile menu toggle -->
+      <button onclick="SDHCall.openSidebar()"
+              class="sm:hidden mr-3 p-2 rounded-lg text-divine-muted hover:text-divine-gold transition-all">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+        </svg>
+      </button>
+
+      <!-- Contact info -->
+      <div class="flex items-center gap-3 flex-1 min-w-0">
+        <div id="callHeaderAvatar"
+             class="w-9 h-9 rounded-full bg-divine-gold/15 border border-divine-border
+                    flex items-center justify-center text-divine-gold text-sm font-semibold flex-shrink-0">
+          —
+        </div>
+        <div class="min-w-0">
+          <p id="callHeaderName" class="text-sm font-semibold text-divine-text">Select a contact to call</p>
+          <p id="callHeaderStatus" class="text-xs text-divine-muted">Choose a contact from the sidebar</p>
+        </div>
+      </div>
+
+      <!-- Go to chat link -->
+      <a href="{% url 'messaging:chat' %}"
+         class="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium
+                bg-divine-card border border-divine-border text-divine-muted
+                hover:text-divine-gold hover:border-divine-gold/40 transition-all">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8
+                   a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12
+                   c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+        </svg>
+        Messages
+      </a>
+    </header>
+
+    <!-- ══ STAGE: Idle – no contact selected ═════════════════════ -->
+    <div id="stageIdle"
+         class="flex-1 flex flex-col items-center justify-center text-center text-divine-muted px-8">
+      <div class="text-7xl mb-6 opacity-20 animate-float select-none">📞</div>
+      <h3 class="text-xl font-semibold text-divine-text/60 mb-2">Voice &amp; Video Calls</h3>
+      <p class="text-sm max-w-xs opacity-60 leading-relaxed">
+        Select a contact from the sidebar to start a secure voice or video call.
+      </p>
+    </div>
+
+    <!-- ══ STAGE: Contact selected – call initiation ══════════════ -->
+    <div id="stageReady" class="hidden flex-1 flex flex-col items-center justify-center gap-8 px-6">
+
+      <!-- Contact avatar + name -->
+      <div class="flex flex-col items-center gap-3">
+        <div id="readyAvatar"
+             class="w-20 h-20 rounded-full bg-divine-gold/15 border-2 border-divine-border
+                    flex items-center justify-center text-divine-gold text-3xl font-bold select-none">
+          ?
+        </div>
+        <p id="readyName" class="text-lg font-semibold text-divine-text"></p>
+        <div id="readyOnlineStatus" class="flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-divine-muted"></span>
+          <span class="text-xs text-divine-muted">Checking…</span>
+        </div>
+      </div>
+
+      <!-- ── Call action grid ───────────────────────────────────── -->
+      <div class="w-full max-w-sm space-y-3">
+
+        <!-- Voice call row -->
+        <div class="flex gap-3">
+          <button onclick="SDH.WebRTC.startVoiceCall('medium')"
+                  class="call-initiate-btn flex-1 flex flex-col items-center gap-1.5 py-5 px-3
+                         rounded-2xl bg-divine-card border border-divine-border
+                         hover:border-green-600/60 hover:bg-green-900/15
+                         text-divine-muted hover:text-green-400 transition-all group">
+            <div class="w-10 h-10 rounded-xl bg-divine-surface border border-divine-border
+                        group-hover:border-green-700/50 flex items-center justify-center text-xl
+                        transition-all">
+              📞
+            </div>
+            <span class="text-xs font-medium">Voice Call</span>
+            <span class="text-[10px] opacity-60 bg-divine-deep px-2 py-0.5 rounded-full">
+              Medium · 32 kHz
+            </span>
+          </button>
+
+          <button onclick="SDH.WebRTC.startVoiceCall('high')"
+                  class="call-initiate-btn flex-1 flex flex-col items-center gap-1.5 py-5 px-3
+                         rounded-2xl bg-divine-card border border-divine-border
+                         hover:border-green-600/60 hover:bg-green-900/15
+                         text-divine-muted hover:text-green-400 transition-all group">
+            <div class="w-10 h-10 rounded-xl bg-divine-surface border border-divine-border
+                        group-hover:border-green-700/50 flex items-center justify-center text-xl
+                        transition-all">
+              🎙️
+            </div>
+            <span class="text-xs font-medium">Voice Call</span>
+            <span class="text-[10px] opacity-60 bg-divine-deep px-2 py-0.5 rounded-full">
+              High · 48 kHz
+            </span>
+          </button>
+        </div>
+
+        <!-- Video call row -->
+        <div class="flex gap-3">
+          <button onclick="SDH.WebRTC.startVideoCall('medium')"
+                  class="call-initiate-btn flex-1 flex flex-col items-center gap-1.5 py-5 px-3
+                         rounded-2xl bg-divine-card border border-divine-border
+                         hover:border-blue-600/60 hover:bg-blue-900/15
+                         text-divine-muted hover:text-blue-400 transition-all group">
+            <div class="w-10 h-10 rounded-xl bg-divine-surface border border-divine-border
+                        group-hover:border-blue-700/50 flex items-center justify-center text-xl
+                        transition-all">
+              📹
+            </div>
+            <span class="text-xs font-medium">Video Call</span>
+            <span class="text-[10px] opacity-60 bg-divine-deep px-2 py-0.5 rounded-full">
+              Medium · 640×480
+            </span>
+          </button>
+
+          <button onclick="SDH.WebRTC.startVideoCall('high')"
+                  class="call-initiate-btn flex-1 flex flex-col items-center gap-1.5 py-5 px-3
+                         rounded-2xl bg-divine-card border border-divine-border
+                         hover:border-blue-600/60 hover:bg-blue-900/15
+                         text-divine-muted hover:text-blue-400 transition-all group">
+            <div class="w-10 h-10 rounded-xl bg-divine-surface border border-divine-border
+                        group-hover:border-blue-700/50 flex items-center justify-center text-xl
+                        transition-all">
+              🎬
+            </div>
+            <span class="text-xs font-medium">Video Call</span>
+            <span class="text-[10px] opacity-60 bg-divine-deep px-2 py-0.5 rounded-full">
+              High · 1280×720
+            </span>
+          </button>
+        </div>
+
+      </div>
+
+      <!-- Security note -->
+      <p class="text-xs text-divine-muted/50 flex items-center gap-1.5">
+        <span>🔒</span>
+        <span>Encrypted via WebRTC &middot; Real-time</span>
+      </p>
+
+    </div>
+
+    <!-- ══ STAGE: Outgoing call (Calling…) ═════════════════════════ -->
+    <div id="stageCalling" class="hidden flex-1 flex flex-col items-center justify-center gap-8 px-6">
+
+      <!-- Pulsing ring animation (green = outgoing) -->
+      <div class="relative flex items-center justify-center">
+        <div class="absolute w-32 h-32 rounded-full border-2 border-green-500/20 animate-ping"></div>
+        <div class="absolute w-24 h-24 rounded-full border-2 border-green-500/30 animate-ping"
+             style="animation-delay: 0.3s;"></div>
+        <div class="w-20 h-20 rounded-full bg-green-500/10 border-2 border-green-500/60
+                    flex items-center justify-center text-4xl animate-pulse">
+          📞
+        </div>
+      </div>
+
+      <div class="text-center space-y-2">
+        <p class="text-xs text-divine-muted uppercase tracking-widest">Calling&hellip;</p>
+        <p id="callingContactName" class="text-2xl font-bold text-divine-text"></p>
+        <p id="callingCallType" class="text-sm text-divine-gold/80"></p>
+      </div>
+
+      <!-- Cancel button -->
+      <div class="flex flex-col items-center gap-2">
+        <button onclick="SDH.WebRTC.endCall()"
+                class="w-16 h-16 rounded-full bg-red-600 hover:bg-red-500
+                       flex items-center justify-center text-white text-2xl
+                       shadow-lg transition-all hover:scale-110 active:scale-95">
+          ✕
+        </button>
+        <span class="text-xs text-divine-muted">Cancel</span>
+      </div>
+
+    </div>
+
+    <!-- ══ STAGE: Incoming call ════════════════════════════════════ -->
+    <div id="stageIncoming" class="hidden flex-1 flex flex-col items-center justify-center gap-8 px-6">
+
+      <!-- Pulsing ring animation -->
+      <div class="relative flex items-center justify-center">
+        <div class="absolute w-32 h-32 rounded-full border-2 border-divine-gold/20 animate-ping"></div>
+        <div class="absolute w-24 h-24 rounded-full border-2 border-divine-gold/30 animate-ping"
+             style="animation-delay: 0.3s;"></div>
+        <div class="w-20 h-20 rounded-full bg-divine-gold/10 border-2 border-divine-gold/60
+                    flex items-center justify-center text-4xl animate-pulse">
+          📞
+        </div>
+      </div>
+
+      <div class="text-center space-y-2">
+        <p class="text-xs text-divine-muted uppercase tracking-widest">Incoming Call</p>
+        <p id="incomingCallerName" class="text-2xl font-bold text-divine-text"></p>
+        <p id="incomingCallType" class="text-sm text-divine-gold/80"></p>
+      </div>
+
+      <!-- Accept / Reject -->
+      <div class="flex gap-8">
+        <div class="flex flex-col items-center gap-2">
+          <button onclick="SDH.WebRTC.rejectCall()"
+                  class="w-16 h-16 rounded-full bg-red-600 hover:bg-red-500
+                         flex items-center justify-center text-white text-2xl
+                         shadow-lg transition-all hover:scale-110 active:scale-95">
+            ✕
+          </button>
+          <span class="text-xs text-divine-muted">Reject</span>
+        </div>
+
+        <div class="flex flex-col items-center gap-2">
+          <button onclick="SDH.WebRTC.acceptCall()"
+                  class="w-16 h-16 rounded-full bg-green-500 hover:bg-green-400
+                         flex items-center justify-center text-white text-2xl
+                         shadow-lg transition-all hover:scale-110 active:scale-95">
+            ✓
+          </button>
+          <span class="text-xs text-divine-muted">Accept</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ══ STAGE: Active call ══════════════════════════════════════ -->
+    <div id="stageActive" class="hidden flex-1 flex flex-col bg-black relative overflow-hidden">
+
+      <!-- Remote video (full background) -->
+      <video id="remoteVideo" autoplay playsinline
+             class="w-full h-full object-cover"></video>
+
+      <!-- Audio-only visual (shown when voice call or camera off) -->
+      <div id="audioCallVisual"
+           class="hidden absolute inset-0 flex flex-col items-center justify-center
+                  bg-gradient-to-b from-divine-deep to-divine-surface">
+        <div class="mb-6">
+          <div class="w-24 h-24 rounded-full bg-divine-gold/10 border-2 border-divine-gold/40
+                      flex items-center justify-center text-5xl animate-float">
+            🎵
+          </div>
+        </div>
+        <p id="activeCallContactName" class="text-xl font-bold text-divine-text mb-1"></p>
+        <p id="activeCallTimer" class="text-sm text-divine-muted tabular-nums font-mono">00:00</p>
+        <!-- Audio level bars -->
+        <div class="flex items-end gap-1 mt-4 h-8">
+          <div class="audio-level-bar w-2 rounded-full bg-divine-gold/60 animate-pulse"></div>
+          <div class="audio-level-bar w-2 rounded-full bg-divine-gold/60 animate-pulse"></div>
+          <div class="audio-level-bar w-2 rounded-full bg-divine-gold/60 animate-pulse"></div>
+          <div class="audio-level-bar w-2 rounded-full bg-divine-gold/60 animate-pulse"></div>
+          <div class="audio-level-bar w-2 rounded-full bg-divine-gold/60 animate-pulse"></div>
+          <div class="audio-level-bar w-2 rounded-full bg-divine-gold/60 animate-pulse"></div>
+          <div class="audio-level-bar w-2 rounded-full bg-divine-gold/60 animate-pulse"></div>
+          <div class="audio-level-bar w-2 rounded-full bg-divine-gold/60 animate-pulse"></div>
+        </div>
+        <style>
+          .audio-level-bar:nth-child(1) { height: 9px;  animation-delay: 0ms; }
+          .audio-level-bar:nth-child(2) { height: 10px; animation-delay: 1ms; }
+          .audio-level-bar:nth-child(3) { height: 11px; animation-delay: 2ms; }
+          .audio-level-bar:nth-child(4) { height: 12px; animation-delay: 3ms; }
+          .audio-level-bar:nth-child(5) { height: 13px; animation-delay: 4ms; }
+          .audio-level-bar:nth-child(6) { height: 14px; animation-delay: 5ms; }
+          .audio-level-bar:nth-child(7) { height: 15px; animation-delay: 6ms; }
+          .audio-level-bar:nth-child(8) { height: 16px; animation-delay: 7ms; }
+        </style>
+      </div>
+
+      <!-- Local video (picture-in-picture) -->
+      <video id="localVideo" autoplay playsinline muted
+             class="absolute bottom-24 right-4 w-36 h-28 object-cover rounded-xl
+                    border-2 border-divine-gold/40 shadow-divine z-10
+                    hover:w-48 hover:h-36 transition-all duration-300 cursor-pointer"
+             title="Your camera"></video>
+
+      <!-- Duration badge -->
+      <div id="callDurationBadge"
+           class="absolute top-4 left-1/2 -translate-x-1/2 z-10
+                  flex items-center gap-2 px-3 py-1.5 rounded-full
+                  bg-black/50 backdrop-blur-sm border border-white/10 text-xs text-white/80">
+        <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+        <span id="callDurationActive" class="font-mono tabular-nums">00:00</span>
+      </div>
+
+      <!-- ── Call controls bar ──────────────────────────────────── -->
+      <div class="absolute bottom-0 left-0 right-0 z-10
+                  flex items-center justify-center gap-3 py-5 px-6
+                  bg-gradient-to-t from-black/80 to-transparent">
+
+        <!-- Mute mic -->
+        <div class="flex flex-col items-center gap-1">
+          <button id="btnMute" onclick="SDH.WebRTC.toggleMute()"
+                  title="Mute microphone"
+                  class="call-ctrl-btn w-12 h-12 rounded-full flex items-center justify-center
+                         bg-divine-card/80 border border-divine-border/60
+                         text-divine-muted hover:text-white hover:border-white/30
+                         backdrop-blur-sm transition-all active:scale-95">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4
+                       m-4-8a3 3 0 01-3-3V5a3 3 0 016 0v6a3 3 0 01-3 3z"/>
+            </svg>
+          </button>
+          <span class="text-[10px] text-white/50">Mute</span>
+        </div>
+
+        <!-- Toggle camera -->
+        <div id="btnCamWrapper" class="flex flex-col items-center gap-1">
+          <button id="btnCam" onclick="SDH.WebRTC.toggleCamera()"
+                  title="Toggle camera"
+                  class="call-ctrl-btn w-12 h-12 rounded-full flex items-center justify-center
+                         bg-divine-card/80 border border-divine-border/60
+                         text-divine-muted hover:text-white hover:border-white/30
+                         backdrop-blur-sm transition-all active:scale-95">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M15 10l4.553-2.069A1 1 0 0121 8.868v6.264a1 1 0 01-1.447.894L15 14
+                       M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+            </svg>
+          </button>
+          <span class="text-[10px] text-white/50">Camera</span>
+        </div>
+
+        <!-- Quality selector -->
+        <div class="flex flex-col items-center gap-1">
+          <select id="qualitySelect" onchange="SDH.WebRTC.changeQuality(this.value)"
+                  class="call-ctrl-btn h-12 px-3 rounded-2xl text-xs
+                         bg-divine-card/80 border border-divine-border/60 text-divine-muted
+                         backdrop-blur-sm focus:outline-none focus:border-divine-gold
+                         transition-all cursor-pointer">
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+          </select>
+          <span class="text-[10px] text-white/50">Quality</span>
+        </div>
+
+        <!-- End call (prominent red) -->
+        <div class="flex flex-col items-center gap-1">
+          <button onclick="SDH.WebRTC.endCall()"
+                  title="End call"
+                  class="call-ctrl-btn w-14 h-14 rounded-full flex items-center justify-center
+                         bg-red-600 hover:bg-red-500 text-white
+                         shadow-lg transition-all active:scale-95 hover:scale-105">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M16 8l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2
+                       M5 3a2 2 0 00-2 2v1c0 8.284 6.716 15 15 15h1a2 2 0 002-2v-3.28
+                       a1 1 0 00-.684-.948l-4.493-1.498a1 1 0 00-1.21.502l-1.13 2.257
+                       a11.042 11.042 0 01-5.516-5.517l2.257-1.128a1 1 0 00.502-1.21
+                       L9.228 3.683A1 1 0 008.279 3H5z"/>
+            </svg>
+          </button>
+          <span class="text-[10px] text-white/50">End Call</span>
+        </div>
+
+      </div>
+    </div><!-- /stageActive -->
+
+  </div><!-- /right panel -->
+
+</div><!-- /root layout -->
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     TOAST CONTAINER (shared with chat.js)
+══════════════════════════════════════════════════════════════ -->
+<div id="callToastContainer"
+     class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex flex-col gap-2 items-center
+            pointer-events-none">
+</div>
+
+{% endblock %}
+
+
+{% block extra_js %}
+<script src="{% static 'js/websocket.js' %}"></script>
+<script src="{% static 'js/chat.js' %}"></script>
+<script src="{% static 'js/webrtc.js' %}"></script>
+
+<script>
+/**
+ * SDHCall – Page controller for call.html
+ * =========================================
+ * Owns UI state transitions for the call page.
+ * Bridges between the contacts sidebar and SDH.WebRTC.
+ *
+ * Stages (mutually exclusive):
+ *   #stageIdle    – no contact selected
+ *   #stageReady   – contact selected, no active call
+ *   #stageIncoming – incoming call ringing
+ *   #stageActive  – call in progress
+ */
+const SDHCall = (() => {
+
+  let activeContact    = null;   // username of the currently selected contact
+  let callTimerHandle  = null;   // setInterval id
+  let callSeconds      = 0;
+
+  // ── Show exactly one stage ─────────────────────────────────────
+  function showStage(id) {
+    ['stageIdle', 'stageReady', 'stageCalling', 'stageIncoming', 'stageActive'].forEach(s => {
+      const el = document.getElementById(s);
+      if (!el) return;
+      el.classList.toggle('hidden', s !== id);
+      // flex on active stages (all except the idle placeholder)
+      el.classList.toggle('flex', s === id && s !== 'stageIdle');
+    });
+  }
+
+  // ── Select a contact to call ───────────────────────────────────
+  function selectContact(username) {
+    if (activeContact === username) return;
+    activeContact = username;
+
+    // Sidebar highlight
+    document.querySelectorAll('.call-contact-item').forEach(el => {
+      el.classList.remove('bg-divine-card', 'border-l-2', 'border-divine-gold');
+    });
+    document.getElementById(`call-item-${username}`)
+      ?.classList.add('bg-divine-card', 'border-l-2', 'border-divine-gold');
+
+    // Header
+    const firstLetter = username[0]?.toUpperCase() || '?';
+    const avatarEl = document.getElementById('callHeaderAvatar');
+    if (avatarEl) avatarEl.textContent = firstLetter;
+    const nameEl = document.getElementById('callHeaderName');
+    if (nameEl) nameEl.textContent = username;
+    const statusEl = document.getElementById('callHeaderStatus');
+    if (statusEl) statusEl.textContent = 'Ready to call';
+
+    // Ready-stage panel
+    const readyAvatar = document.getElementById('readyAvatar');
+    if (readyAvatar) readyAvatar.textContent = firstLetter;
+    const readyName = document.getElementById('readyName');
+    if (readyName) readyName.textContent = username;
+
+    // Online status badge
+    const onlineDot = document.getElementById(`call-online-${username}`);
+    const isOnline  = onlineDot?.classList.contains('sdh-online-dot--on');
+    const readyStatus = document.getElementById('readyOnlineStatus');
+    if (readyStatus) {
+      readyStatus.innerHTML = isOnline
+        ? '<span class="w-2 h-2 rounded-full bg-green-400"></span><span class="text-xs sdh-status-active">Active</span>'
+        : '<span class="w-2 h-2 rounded-full bg-divine-muted"></span><span class="text-xs sdh-status-inactive">Inactive</span>';
+    }
+
+    // Connect WebRTC signaling socket for this user
+    SDH.WebRTC.setRemoteUser(username);
+
+    // Transition to ready stage
+    showStage('stageReady');
+    closeSidebar();
+  }
+
+  // ── Called by SDH.WebRTC when an incoming call arrives ────────
+  function onIncomingCall(callerUsername, callType) {
+    const nameEl = document.getElementById('incomingCallerName');
+    if (nameEl) nameEl.textContent = callerUsername;
+    const typeEl = document.getElementById('incomingCallType');
+    if (typeEl) typeEl.textContent = callType === 'video' ? '📹 Video Call' : '📞 Voice Call';
+
+    showStage('stageIncoming');
+  }
+
+  // ── Called by SDH.WebRTC when an active call is established ───
+  function onCallActive(callType) {
+    showStage('stageActive');
+
+    const audioVisual = document.getElementById('audioCallVisual');
+    const camWrapper  = document.getElementById('btnCamWrapper');
+    const nameEl      = document.getElementById('activeCallContactName');
+
+    if (nameEl) nameEl.textContent = activeContact || '';
+
+    if (callType === 'voice') {
+      audioVisual?.classList.remove('hidden');
+      camWrapper?.classList.add('hidden');
+    } else {
+      audioVisual?.classList.add('hidden');
+      camWrapper?.classList.remove('hidden');
+    }
+
+    // Start call timer
+    callSeconds = 0;
+    callTimerHandle = setInterval(() => {
+      callSeconds++;
+      const m = String(Math.floor(callSeconds / 60)).padStart(2, '0');
+      const s = String(callSeconds % 60).padStart(2, '0');
+      const t = `${m}:${s}`;
+      const badge   = document.getElementById('callDurationActive');
+      const timerEl = document.getElementById('activeCallTimer');
+      if (badge)   badge.textContent   = t;
+      if (timerEl) timerEl.textContent = t;
+    }, 1000);
+  }
+  // ── Called by SDH.WebRTC when the outgoing call is ringing ────────
+  function onCalling(callType) {
+    const nameEl = document.getElementById('callingContactName');
+    if (nameEl) nameEl.textContent = activeContact || '';
+    const typeEl = document.getElementById('callingCallType');
+    if (typeEl) typeEl.textContent = callType === 'video' ? '📹 Video Call' : '📞 Voice Call';
+    showStage('stageCalling');
+  }
+  // ── Called by SDH.WebRTC when the call ends ───────────────────
+  function onCallEnded() {
+    clearInterval(callTimerHandle);
+    callTimerHandle = null;
+    callSeconds     = 0;
+
+    // Clear video elements
+    const rv = document.getElementById('remoteVideo');
+    const lv = document.getElementById('localVideo');
+    if (rv) rv.srcObject = null;
+    if (lv) lv.srcObject = null;
+
+    // Return to ready (if contact selected) or idle
+    showStage(activeContact ? 'stageReady' : 'stageIdle');
+  }
+
+  // ── Sidebar mobile helpers ────────────────────────────────────
+  function openSidebar() {
+    document.getElementById('callSidebar')?.classList.replace('-translate-x-full', 'translate-x-0');
+    document.getElementById('callSidebarOverlay')?.classList.remove('hidden');
+  }
+
+  function closeSidebar() {
+    document.getElementById('callSidebar')?.classList.replace('translate-x-0', '-translate-x-full');
+    document.getElementById('callSidebarOverlay')?.classList.add('hidden');
+  }
+
+  // ── Contact search filter ─────────────────────────────────────
+  function filterContacts(query) {
+    const q = query.toLowerCase();
+    document.querySelectorAll('.call-contact-item').forEach(el => {
+      el.style.display = (el.dataset.username || '').toLowerCase().includes(q) ? '' : 'none';
+    });
+  }
+
+  // ── Inline toast (doesn't depend on chat.js DOM elements) ────
+  function showToast(message, type = 'info') {
+    const colors = {
+      info:    'bg-divine-card  border-divine-border  text-divine-text',
+      success: 'bg-green-900/80 border-green-700      text-green-200',
+      warning: 'bg-yellow-900/80 border-yellow-700    text-yellow-200',
+      error:   'bg-red-900/80   border-red-700        text-red-200',
+    };
+    const toast = document.createElement('div');
+    toast.className = `pointer-events-auto px-5 py-3 rounded-xl border text-sm
+                       shadow-2xl animate-slide-in ${colors[type] || colors.info}`;
+    toast.textContent = message;
+    document.getElementById('callToastContainer')?.appendChild(toast);
+    setTimeout(() => {
+      toast.style.transition = 'opacity 0.4s';
+      toast.style.opacity    = '0';
+      setTimeout(() => toast.remove(), 400);
+    }, 3500);
+  }
+
+  // ── Bootstrap ─────────────────────────────────────────────────
+  async function init() {
+    // Route SDH.WebRTC/chat toast calls to our inline toast
+    SDH.Chat.showToast = showToast;
+
+    // Register the call-page bridge so webrtc.js can drive our stage transitions
+    // from showIncomingCallPanel / showActiveCallPanel / hideCallOverlay.
+    window._SDHCallPage = {
+      onCalling,
+      onIncomingCall,
+      onCallActive,
+      onCallEnded,
+    };
+
+    // Show correct initial stage
+    showStage('stageIdle');
+
+    // Pre-select contact if URL embedded one (e.g. /messaging/call/<username>/)
+    if (SDH_PRESELECT) {
+      selectContact(SDH_PRESELECT);
+    }
+  }
+
+  return {
+    init,
+    selectContact,
+    filterContacts,
+    openSidebar,
+    closeSidebar,
+    showToast,
+    // Called by webrtc.js hotswap hooks
+    onCalling,
+    onIncomingCall,
+    onCallActive,
+    onCallEnded,
+  };
+})();
+
+
+// ── Monkey-patch SDH.WebRTC to remove call.html-irrelevant wrappers ──────
+// webrtc.js now calls window._SDHCallPage.onIncoming/onCallActive/onCallEnded
+// directly from showIncomingCallPanel / showActiveCallPanel / hideCallOverlay.
+// No additional wrapping needed here — the bridge is clean.
+// We only override endCall / rejectCall to ensure the wrapper dispatches
+// nothing extra so onCallEnded isn't fired twice.
+(function patchWebRTCForCallPage() {
+  const orig = SDH.WebRTC;
+
+  // These are no-op thin wrappers — the real stage transitions happen via
+  // window._SDHCallPage inside webrtc.js's hideCallOverlay / showActiveCallPanel.
+  const _origEnd    = orig.endCall.bind(orig);
+  const _origReject = orig.rejectCall.bind(orig);
+
+  SDH.WebRTC.endCall    = function () { _origEnd(); };
+  SDH.WebRTC.rejectCall = function () { _origReject(); };
+})();
+
+
+// ── DOMContentLoaded boot ─────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => SDHCall.init());
+</script>
+{% endblock %}

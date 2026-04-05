@@ -1,0 +1,363 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Sandesh – Real-time, secure messaging." />
+  <title>{% block title %}Sandesh{% endblock %}</title>
+
+  <!-- Tailwind CSS (CDN – swap for compiled build in production) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            divine: {
+              gold:    '#a855f7',
+              amber:   '#818cf8',
+              saffron: '#c084fc',
+              deep:    '#020408',
+              surface: '#07090f',
+              card:    '#0c0820',
+              border:  '#1e1045',
+              text:    '#e2e8f0',
+              muted:   '#8892c0',
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          animation: {
+            'pulse-gold': 'pulseGold 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            'glow':       'glow 2.5s ease-in-out infinite alternate',
+            'float':      'float 4s ease-in-out infinite',
+            'slide-in':   'slideIn 0.3s ease-out',
+            'msg-appear': 'msgAppear 0.35s cubic-bezier(0.34,1.4,0.64,1)',
+            'badge-pop':  'badgePop 0.4s cubic-bezier(0.34,1.56,0.64,1)',
+            'fade-in-up': 'fadeInUp 0.5s ease-out',
+          },
+          keyframes: {
+            pulseGold: {
+              '0%, 100%': { opacity: '1' },
+              '50%':      { opacity: '0.5' },
+            },
+            glow: {
+              '0%':   { boxShadow: '0 0 5px #a855f7, 0 0 20px #a855f7, 0 0 40px #818cf8' },
+              '100%': { boxShadow: '0 0 10px #818cf8, 0 0 40px #818cf8, 0 0 80px #a855f7' },
+            },
+            float: {
+              '0%, 100%': { transform: 'translateY(0px)' },
+              '50%':      { transform: 'translateY(-8px)' },
+            },
+            slideIn: {
+              '0%':   { opacity: '0', transform: 'translateY(12px)' },
+              '100%': { opacity: '1', transform: 'translateY(0)' },
+            },
+            msgAppear: {
+              '0%':   { opacity: '0', transform: 'scale(0.92) translateY(8px)' },
+              '100%': { opacity: '1', transform: 'scale(1) translateY(0)' },
+            },
+            fadeInUp: {
+              '0%':   { opacity: '0', transform: 'translateY(16px)' },
+              '100%': { opacity: '1', transform: 'translateY(0)' },
+            },
+            badgePop: {
+              '0%':   { transform: 'scale(0)', opacity: '0' },
+              '60%':  { transform: 'scale(1.15)', opacity: '1' },
+              '100%': { transform: 'scale(1)', opacity: '1' },
+            }
+          },
+          boxShadow: {
+            'divine':    '0 0 30px rgba(168, 85, 247, 0.18)',
+            'glow-sm':   '0 0 8px rgba(168, 85, 247, 0.45)',
+            'glow-gold': '0 0 18px rgba(168, 85, 247, 0.4)',
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="{% static 'css/custom.css' %}" />
+
+  {% block extra_head %}{% endblock %}
+</head>
+
+<body class="bg-divine-deep text-divine-text font-sans min-h-screen antialiased">
+
+  <!-- ── Top Navigation Bar ─────────────────────────────────── -->
+  {% if user.is_authenticated %}
+  <nav class="fixed top-0 left-0 right-0 z-50 h-14 bg-divine-surface/90 backdrop-blur-md border-b border-divine-border flex items-center justify-between px-6">
+
+    <!-- Logo -->
+    <a href="{% url 'users:index' %}" class="flex items-center gap-2 group">
+      <span class="sandesh-nav-brand text-xl font-bold tracking-wider">
+        ✦ Sandesh
+      </span>
+      <span class="hidden sm:block text-divine-muted text-xs uppercase tracking-widest">
+        Sandesh Messenger
+      </span>
+    </a>
+
+    <!-- Nav Actions -->
+    <div class="flex items-center gap-4">
+
+      <!-- Theme Toggle -->
+      <button id="themeToggle" onclick="SDH.toggleTheme()"
+              class="p-2 rounded-full text-divine-muted hover:text-divine-gold hover:bg-divine-card transition-all"
+              title="Toggle theme">
+        <svg id="iconDark" class="w-4 h-4 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707M17.657 17.657l-.707-.707M6.343 6.343l-.707-.707M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        <svg id="iconLight" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+        </svg>
+      </button>
+
+      <!-- User Menu -->
+      <div class="relative" id="userMenuContainer">
+        <button onclick="document.getElementById('userDropdown').classList.toggle('hidden')"
+                class="flex items-center gap-2 group">
+          <div class="w-8 h-8 rounded-full bg-divine-gold/20 border border-divine-gold/40 flex items-center justify-center text-divine-gold text-sm font-semibold">
+            {{ user.username|slice:":1"|upper }}
+          </div>
+          <span class="hidden sm:block text-sm text-divine-muted group-hover:text-divine-text transition-colors">
+            {{ user.username }}
+          </span>
+        </button>
+
+        <!-- Dropdown -->
+        <div id="userDropdown"
+             class="hidden absolute right-0 top-full mt-2 w-44 bg-divine-card border border-divine-border rounded-xl shadow-2xl overflow-hidden z-50">
+          <a href="{% url 'users:profile' %}"
+             class="flex items-center gap-2 px-4 py-3 text-sm text-divine-muted hover:text-divine-text hover:bg-divine-surface transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+            </svg>
+            Profile
+          </a>
+          <div class="border-t border-divine-border"></div>
+          <a href="{% url 'users:logout' %}"
+             class="flex items-center gap-2 px-4 py-3 text-sm text-red-400 hover:text-red-300 hover:bg-divine-surface transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+            </svg>
+            Sign Out
+          </a>
+        </div>
+      </div>
+
+    </div>
+  </nav>
+  {% endif %}
+
+  <!-- ── Flash Messages ─────────────────────────────────────── -->
+  {% if messages %}
+  <div id="flashMessages" class="fixed top-16 right-4 z-50 flex flex-col gap-2 max-w-sm">
+    {% for message in messages %}
+    <div class="flash-msg px-4 py-3 rounded-xl border text-sm font-medium shadow-lg animate-slide-in
+                {% if message.tags == 'error' or message.tags == 'danger' %}
+                  bg-red-900/80 border-red-700 text-red-200
+                {% elif message.tags == 'success' %}
+                  bg-green-900/80 border-green-700 text-green-200
+                {% elif message.tags == 'warning' %}
+                  bg-yellow-900/80 border-yellow-700 text-yellow-200
+                {% else %}
+                  bg-divine-card border-divine-border text-divine-text
+                {% endif %}">
+      {{ message }}
+    </div>
+    {% endfor %}
+  </div>
+  <script>
+    setTimeout(() => {
+      document.querySelectorAll('.flash-msg').forEach(el => {
+        el.style.transition = 'opacity 0.5s';
+        el.style.opacity = '0';
+        setTimeout(() => el.remove(), 500);
+      });
+    }, 4000);
+  </script>
+  {% endif %}
+
+  <!-- ── Main Content ───────────────────────────────────────── -->
+  <main class="{% if user.is_authenticated %}pt-14{% endif %}">
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- ── Footer (shown only on public pages) ────────────────── -->
+  {% block footer %}{% endblock %}
+
+  <!-- ── Global JS ──────────────────────────────────────────── -->
+  <script>
+    // ── SDH Global Namespace ──────────────────────────────────
+    window.SDH = window.SDH || {};
+
+    // Theme management
+    SDH.THEME_KEY = 'sandesh_theme';
+    SDH.applyTheme = function(theme) {
+      const root = document.documentElement;
+      if (theme === 'light') {
+        root.classList.remove('dark');
+        root.setAttribute('data-theme', 'light');
+      } else {
+        root.classList.add('dark');
+        root.setAttribute('data-theme', 'dark');
+      }
+      document.getElementById('iconDark')?.classList?.toggle('hidden', theme !== 'light');
+      document.getElementById('iconLight')?.classList?.toggle('hidden', theme === 'light');
+      localStorage.setItem(SDH.THEME_KEY, theme);
+    };
+
+    SDH.toggleTheme = function() {
+      const current = localStorage.getItem(SDH.THEME_KEY) || 'dark';
+      SDH.applyTheme(current === 'dark' ? 'light' : 'dark');
+    };
+
+    // Init theme on load
+    (function() {
+      const saved = localStorage.getItem('sandesh_theme') || 'dark';
+      SDH.applyTheme(saved);
+    })();
+
+    // Close dropdown on outside click
+    document.addEventListener('click', function(e) {
+      const container = document.getElementById('userMenuContainer');
+      const dropdown = document.getElementById('userDropdown');
+      if (container && dropdown && !container.contains(e.target)) {
+        dropdown.classList.add('hidden');
+      }
+    });
+  </script>
+
+  {% block extra_js %}{% endblock %}
+
+  <!-- ✦ Sandesh Stars Background ────────────────────────────────────────── -->
+  <script>
+  (function () {
+    'use strict';
+    var c = document.createElement('canvas');
+    c.id = 'sandeshStarsCanvas';
+    c.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:-1;';
+    document.body.insertBefore(c, document.body.firstChild);
+    var ctx = c.getContext('2d');
+    var w = c.width = window.innerWidth;
+    var h = c.height = window.innerHeight;
+    var NUM = 200, stars = [];
+    function mkStar() {
+      var big = Math.random() < 0.08;
+      return {
+        x: Math.random() * w, y: Math.random() * h,
+        r: big ? Math.random() * 1.8 + 1.2 : Math.random() * 1.2 + 0.2,
+        phase: Math.random() * Math.PI * 2,
+        speed: 0.002 + Math.random() * 0.007,
+        glow: big || Math.random() < 0.25,
+        col: Math.random() < 0.25 ? '168,85,247'
+           : Math.random() < 0.5  ? '192,132,252'
+           : '230,230,255',
+      };
+    }
+    for (var i = 0; i < NUM; i++) stars.push(mkStar());
+    function draw(ts) {
+      ctx.clearRect(0, 0, w, h);
+      for (var i = 0; i < stars.length; i++) {
+        var s = stars[i];
+        s.phase += s.speed;
+        var a = 0.25 + ((Math.sin(s.phase) + 1) / 2) * 0.7;
+        ctx.save();
+        ctx.globalAlpha = a;
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.r, 0, 6.283);
+        ctx.fillStyle = 'rgb(' + s.col + ')';
+        if (s.glow) { ctx.shadowBlur = 10; ctx.shadowColor = 'rgba(' + s.col + ',0.9)'; }
+        ctx.fill();
+        ctx.restore();
+      }
+      requestAnimationFrame(draw);
+    }
+    requestAnimationFrame(draw);
+    window.addEventListener('resize', function () {
+      w = c.width = window.innerWidth;
+      h = c.height = window.innerHeight;
+      for (var i = 0; i < stars.length; i++) { stars[i].x = Math.random()*w; stars[i].y = Math.random()*h; }
+    });
+  })();
+  </script>
+
+  <!-- ✦ Sandesh Cursor Trail ─────────────────────────────────────────── -->
+  <script>
+  (function () {
+    'use strict';
+    var c = document.createElement('canvas');
+    c.id = 'sandeshCursorCanvas';
+    c.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9999;';
+    document.body.appendChild(c);
+    var ctx = c.getContext('2d');
+    c.width = window.innerWidth;
+    c.height = window.innerHeight;
+    var COLS = ['168,85,247','129,140,248','192,132,252','99,102,241','167,139,250'];
+    var particles = [];
+    function Particle(x, y) {
+      this.x = x; this.y = y;
+      this.vx = (Math.random() - 0.5) * 1.8;
+      this.vy = (Math.random() - 0.5) * 1.8;
+      this.life = 1;
+      this.decay = 0.024 + Math.random() * 0.032;
+      this.r = 2 + Math.random() * 3.5;
+      this.col = COLS[Math.floor(Math.random() * COLS.length)];
+    }
+    Particle.prototype.update = function () {
+      this.x += this.vx; this.y += this.vy;
+      this.vx *= 0.95; this.vy *= 0.95;
+      this.life -= this.decay;
+      this.r  *= 0.97;
+    };
+    Particle.prototype.draw = function () {
+      if (this.life <= 0 || this.r < 0.3) return;
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, this.life * 0.65);
+      var g = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.r);
+      g.addColorStop(0, 'rgba(' + this.col + ',' + this.life + ')');
+      g.addColorStop(1, 'rgba(' + this.col + ',0)');
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.r, 0, 6.283);
+      ctx.fillStyle = g;
+      ctx.shadowBlur = 10;
+      ctx.shadowColor = 'rgba(' + this.col + ',0.55)';
+      ctx.fill();
+      ctx.restore();
+    };
+    document.addEventListener('mousemove', function (e) {
+      for (var i = 0; i < 3; i++) particles.push(new Particle(e.clientX, e.clientY));
+    });
+    window.addEventListener('resize', function () {
+      c.width = window.innerWidth;
+      c.height = window.innerHeight;
+    });
+    function loop() {
+      ctx.clearRect(0, 0, c.width, c.height);
+      for (var i = particles.length - 1; i >= 0; i--) {
+        particles[i].update();
+        particles[i].draw();
+        if (particles[i].life <= 0) particles.splice(i, 1);
+      }
+      if (particles.length > 180) particles.splice(0, particles.length - 180);
+      requestAnimationFrame(loop);
+    }
+    loop();
+  })();
+  </script>
+</body>
+</html>

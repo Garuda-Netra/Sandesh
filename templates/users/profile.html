@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Profile — Sandesh{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto px-6 py-12">
+
+  <h1 class="text-2xl font-bold text-divine-text mb-8 tracking-wide">Your Profile</h1>
+
+  <div class="bg-divine-card border border-divine-border rounded-2xl p-8 space-y-6">
+
+    <!-- Avatar row -->
+    <div class="flex items-center gap-5">
+      {% if profile.avatar %}
+        <img src="{{ profile.avatar.url }}" alt="Avatar"
+             class="w-16 h-16 rounded-full object-cover border-2 border-divine-gold" />
+      {% else %}
+        <div class="w-16 h-16 rounded-full bg-divine-gold/20 border-2 border-divine-gold/40 flex items-center justify-center text-divine-gold text-2xl font-bold">
+          {{ user.username|slice:":1"|upper }}
+        </div>
+      {% endif %}
+      <div>
+        <p class="text-divine-text font-semibold text-lg">{{ user.username }}</p>
+        <p class="text-divine-muted text-sm">{{ user.email }}</p>
+      </div>
+    </div>
+
+    <!-- Profile form -->
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+
+      <div class="mb-5">
+        <label class="block text-sm font-medium text-divine-muted mb-2">Bio</label>
+        {{ form.bio }}
+      </div>
+
+      <div class="mb-6">
+        <label class="block text-sm font-medium text-divine-muted mb-2">Avatar</label>
+        {{ form.avatar }}
+      </div>
+
+      <button type="submit"
+              class="px-6 py-2.5 rounded-xl font-medium text-sm
+                     bg-gradient-to-r from-divine-gold to-divine-amber text-divine-deep
+                     hover:from-divine-amber hover:to-divine-saffron transition-all">
+        Save Changes
+      </button>
+    </form>
+
+  </div>
+
+  <!-- ── Danger Zone ─────────────────────────────────────────────────── -->
+  <div class="mt-8 bg-divine-card border border-red-900/40 rounded-2xl p-8">
+    <h2 class="text-lg font-semibold text-red-400 mb-1">Danger Zone</h2>
+    <p class="text-divine-muted text-sm mb-5">
+      Permanently deactivate your account. This action cannot be undone.
+    </p>
+    <button id="openDeleteModal"
+            class="px-5 py-2.5 rounded-xl text-sm font-medium
+                   border border-red-700/60 text-red-400
+                   hover:bg-red-900/25 hover:border-red-500 transition-all">
+      Delete Account
+    </button>
+  </div>
+
+</div>
+
+<!-- ── Delete Account Confirmation Modal ───────────────────────────── -->
+<div id="deleteAccountModal"
+     class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm hidden"
+     role="dialog" aria-modal="true" aria-labelledby="deleteModalTitle">
+
+  <div class="relative bg-divine-card border border-divine-border rounded-2xl shadow-2xl w-full max-w-md mx-4 p-8">
+
+    <!-- Close button -->
+    <button id="closeDeleteModal"
+            class="absolute top-4 right-4 text-divine-muted hover:text-divine-text transition-colors"
+            aria-label="Close">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+      </svg>
+    </button>
+
+    <!-- Icon -->
+    <div class="flex items-center justify-center w-14 h-14 rounded-full bg-red-900/25 border border-red-700/40 mx-auto mb-5">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-7 h-7 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round"
+              d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+      </svg>
+    </div>
+
+    <h3 id="deleteModalTitle" class="text-xl font-bold text-center text-divine-text mb-3">
+      Delete Account
+    </h3>
+    <p class="text-divine-muted text-sm text-center leading-relaxed mb-8">
+      Are you sure you want to permanently deactivate your account?
+      This action <span class="text-red-400 font-medium">cannot be undone</span>.
+      Your messages will remain but your account will be inaccessible.
+    </p>
+
+    <div class="flex flex-col gap-3">
+      <button id="confirmDeleteBtn"
+              class="w-full py-2.5 rounded-xl font-semibold text-sm
+                     bg-red-700 hover:bg-red-600 text-white transition-all
+                     disabled:opacity-50 disabled:cursor-not-allowed">
+        Confirm Account Deletion
+      </button>
+      <button id="cancelDeleteBtn"
+              class="w-full py-2.5 rounded-xl font-medium text-sm
+                     border border-divine-border text-divine-muted
+                     hover:border-divine-gold hover:text-divine-text transition-all">
+        Cancel
+      </button>
+    </div>
+
+    <!-- Inline feedback -->
+    <p id="deleteStatusMsg" class="text-center text-sm mt-4 hidden"></p>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+  'use strict';
+
+  const modal        = document.getElementById('deleteAccountModal');
+  const openBtn      = document.getElementById('openDeleteModal');
+  const closeBtn     = document.getElementById('closeDeleteModal');
+  const cancelBtn    = document.getElementById('cancelDeleteBtn');
+  const confirmBtn   = document.getElementById('confirmDeleteBtn');
+  const statusMsg    = document.getElementById('deleteStatusMsg');
+
+  function openModal()  { modal.classList.remove('hidden'); confirmBtn.disabled = false; statusMsg.classList.add('hidden'); }
+  function closeModal() { modal.classList.add('hidden'); }
+
+  openBtn.addEventListener('click', openModal);
+  closeBtn.addEventListener('click', closeModal);
+  cancelBtn.addEventListener('click', closeModal);
+
+  // Close on backdrop click
+  modal.addEventListener('click', function (e) {
+    if (e.target === modal) closeModal();
+  });
+
+  // Keyboard: Escape closes
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && !modal.classList.contains('hidden')) closeModal();
+  });
+
+  confirmBtn.addEventListener('click', async function () {
+    confirmBtn.disabled = true;
+    confirmBtn.textContent = 'Deleting…';
+
+    try {
+      const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+      const resp = await fetch('{% url "users:delete_account" %}', {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': csrfToken,
+          'Content-Type': 'application/json',
+        },
+        credentials: 'same-origin',
+      });
+
+      if (resp.ok) {
+        statusMsg.textContent = 'Your account has been permanently deleted. Redirecting…';
+        statusMsg.className   = 'text-center text-sm mt-4 text-green-400';
+        statusMsg.classList.remove('hidden');
+        setTimeout(() => { window.location.href = '/'; }, 1500);
+      } else {
+        throw new Error('Server error ' + resp.status);
+      }
+    } catch (err) {
+      statusMsg.textContent = 'Something went wrong. Please try again.';
+      statusMsg.className   = 'text-center text-sm mt-4 text-red-400';
+      statusMsg.classList.remove('hidden');
+      confirmBtn.disabled    = false;
+      confirmBtn.textContent = 'Confirm Account Deletion';
+    }
+  });
+})();
+</script>
+{% endblock %}

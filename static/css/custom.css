@@ -1,0 +1,1626 @@
+/*
+ *SDH – Custom CSS  (v3 – Cosmic Futuristic Edition)
+ * =====================================================
+ * Design language: deep-space dark, divine gold accents,
+ * glassmorphism panels, neon glow, sacred geometry.
+ *
+ * Palette:
+ *   Gold:    #a855f7   Amber:   #818cf8   Saffron: #FF7700
+ *   Deep:    #07071A   Surface: #0E0E24   Card:    #14143A   Border: #252550
+ *
+ * Key features:
+ *   ● Glassmorphism panels with enhanced blur
+ *   ● Neon glow effects on interactive elements
+ *   ● CSS-only floating particle system
+ *   ● Sacred geometry animations
+ *   ● Smooth cubic-bezier transitions
+ *   ● Enhanced dark + light theme
+ */
+
+/* ─── Fonts ──────────────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+
+/* ─── CSS Custom Properties ──────────────────────────────────── */
+:root {
+  --c-gold:      #a855f7;
+  --c-amber:     #818cf8;
+  --c-saffron:   #c084fc;
+  --c-deep:      #020408;
+  --c-surface:   #07090f;
+  --c-card:      #0c0820;
+  --c-border:    #1e1045;
+  --c-text:      #e2e8f0;
+  --c-muted:     #8892c0;
+  --transition:  0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-bounce: 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* Glow values reused across components */
+  --glow-gold:    0 0 18px rgba(168, 85, 247, 0.45);
+  --glow-gold-lg: 0 0 30px rgba(168, 85, 247, 0.3), 0 0 60px rgba(168, 85, 247, 0.15);
+  --glow-green:   0 0 14px rgba(74, 222, 128, 0.4);
+  --glow-saffron: 0 0 22px rgba(192, 132, 252, 0.35);
+  --glow-blue:    0 0 14px rgba(96, 165, 250, 0.35);
+  --glow-red:     0 0 14px rgba(239, 68, 68, 0.35);
+
+  /* Glassmorphism presets — dark purple tinted */
+  --glass-bg:     rgba(5, 2, 18, 0.75);
+  --glass-border: rgba(50, 22, 110, 0.55);
+  --glass-blur:   blur(24px) saturate(1.5);
+}
+
+/* ─── Light theme overrides ──────────────────────────────────── */
+[data-theme="light"] {
+  --c-deep:       #F0F0FA;
+  --c-surface:    #FAFAFE;
+  --c-card:       #FFFFFF;
+  --c-border:     #D8D8EC;
+  --c-text:       #1A1A2E;
+  --c-muted:      #5858A0;
+  --glass-bg:     rgba(250,250,255,0.78);
+  --glass-border: rgba(200,200,220,0.55);
+}
+
+/* ─── Base reset ─────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background-color: var(--c-deep);
+  background-image:
+    radial-gradient(ellipse 100% 70% at 50%  0%,  rgba(109, 40, 217, 0.38) 0%, transparent 55%),
+    radial-gradient(ellipse 65%  55% at 10%  55%, rgba(79,  70, 229, 0.22) 0%, transparent 60%),
+    radial-gradient(ellipse 55%  50% at 90% 100%, rgba(124, 58, 237, 0.2)  0%, transparent 60%),
+    radial-gradient(ellipse 40%  40% at 50%  50%, rgba(45,  10, 100, 0.35) 0%, transparent 70%);
+  color:            var(--c-text);
+  font-family:      'Inter', system-ui, sans-serif;
+  line-height:      1.6;
+}
+
+/* ─── Sandesh brand title — saffron gradient ─────────────────── */
+.sandesh-title {
+  background: linear-gradient(160deg,
+    #ff6a00  0%,
+    #ff9933  30%,
+    #ffcc44  60%,
+    #ff8c00  100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter:
+    drop-shadow(0 0 18px rgba(255, 153, 51, 0.55))
+    drop-shadow(0 0 40px rgba(255, 100, 0, 0.3));
+  animation: saffronShine 4s ease-in-out infinite alternate;
+}
+@keyframes saffronShine {
+  0%   { background-position: 0%   50%; filter: drop-shadow(0 0 18px rgba(255,153,51,0.55)) drop-shadow(0 0 40px rgba(255,100,0,0.3)); }
+  100% { background-position: 100% 50%; filter: drop-shadow(0 0 28px rgba(255,180,50,0.75)) drop-shadow(0 0 60px rgba(255,140,0,0.4)); }
+}
+
+/* navbar brand */
+.sandesh-nav-brand {
+  background: linear-gradient(90deg, #ff9933, #ffcc44, #ff8c00);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 0 10px rgba(255,153,51,0.5));
+}
+
+/* ─── Scrollbar ──────────────────────────────────────────────── */
+::-webkit-scrollbar       { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background:    rgba(45,45,90,0.8);
+  border-radius: 99px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(168, 85, 247, 0.55);
+}
+
+/* User list custom scrollbar */
+.sdh-user-list-scroll::-webkit-scrollbar { width: 3px; }
+.sdh-user-list-scroll::-webkit-scrollbar-thumb {
+  background: rgba(168,85,247,0.2);
+  border-radius: 99px;
+}
+
+
+/* ════════════════════════════════════════════════════════════════
+   CHAT LAYOUT — WRAPPER
+════════════════════════════════════════════════════════════════ */
+.sdh-chat-wrap {
+  background: var(--c-deep);
+  background-image:
+    radial-gradient(ellipse 70% 60% at 15% 50%, rgba(30,10,80,0.5)  0%, transparent 70%),
+    radial-gradient(ellipse 60% 50% at 85% 50%, rgba(10,30,70,0.4)  0%, transparent 70%);
+}
+
+
+/* ════════════════════════════════════════════════════════════════
+   COSMIC AMBIENT BACKGROUND
+════════════════════════════════════════════════════════════════ */
+.sdh-cosmic-bg {
+  position: absolute;
+  inset:    0;
+  overflow: hidden;
+  z-index:  0;
+  pointer-events: none;
+}
+
+/* ─── Floating orbs ──────────────────────────────────────────── */
+.sdh-orb {
+  position:      absolute;
+  border-radius: 50%;
+  filter:        blur(80px);
+  opacity:       0.08;
+  animation:     orbDrift 18s ease-in-out infinite alternate;
+  will-change:   transform;
+}
+
+.sdh-orb-1 {
+  width: 400px; height: 400px;
+  top: -120px;  left: -80px;
+  background: radial-gradient(circle, #7C3AED, #a855f7);
+  animation-duration: 22s;
+}
+.sdh-orb-2 {
+  width: 320px; height: 320px;
+  bottom: -80px; right: 10%;
+  background: radial-gradient(circle, #1D4ED8, #06B6D4);
+  animation-duration: 17s;
+  animation-direction: alternate-reverse;
+}
+.sdh-orb-3 {
+  width: 260px; height: 260px;
+  top: 40%; left: 40%;
+  background: radial-gradient(circle, #a855f7, #FF7700);
+  animation-duration: 28s;
+  opacity: 0.05;
+}
+.sdh-orb-4 {
+  width: 200px; height: 200px;
+  top: 20%; right: 25%;
+  background: radial-gradient(circle, #EC4899, #8B5CF6);
+  animation-duration: 24s;
+  animation-delay: -5s;
+  opacity: 0.04;
+}
+
+@keyframes orbDrift {
+  0%   { transform: translate(0, 0)          scale(1);    }
+  33%  { transform: translate(30px, -40px)   scale(1.08); }
+  66%  { transform: translate(-20px, 25px)   scale(0.94); }
+  100% { transform: translate(-15px, 20px)   scale(0.96); }
+}
+
+/* ─── CSS-only floating particles ────────────────────────────── */
+.sdh-particles {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.sdh-particle {
+  position:      absolute;
+  display:       block;
+  width:         2px;
+  height:        2px;
+  border-radius: 50%;
+  background:    rgba(168,85,247,0.4);
+  box-shadow:    0 0 6px 1px rgba(168,85,247,0.2);
+  opacity:       0;
+  animation:     particleFloat 12s ease-in-out infinite;
+  animation-delay: calc(var(--delay, 0) * 0.5s);
+  left:          calc(var(--x, 1) * 2.5%);
+  bottom:        -10px;
+  will-change:   transform, opacity;
+}
+
+/* Vary particle sizes */
+.sdh:nth-child(3n)     { width: 3px; height: 3px; background: rgba(245,158,11,0.35); }
+.sdh:nth-child(5n)     { width: 1px; height: 1px; background: rgba(96,165,250,0.3); }
+.sdh:nth-child(7n)     { width: 4px; height: 4px; background: rgba(168,85,247,0.2); box-shadow: 0 0 10px 2px rgba(168,85,247,0.15); }
+
+@keyframes particleFloat {
+  0%   { transform: translateY(0) translateX(0) scale(0);        opacity: 0; }
+  10%  { opacity: 0.6; transform: translateY(-5vh) translateX(5px) scale(1); }
+  50%  { opacity: 0.8; transform: translateY(-45vh) translateX(-12px) scale(1.1); }
+  90%  { opacity: 0.3; transform: translateY(-85vh) translateX(8px) scale(0.8); }
+  100% { opacity: 0;   transform: translateY(-100vh) translateX(0) scale(0);  }
+}
+
+/* ─── Subtle grid overlay ────────────────────────────────────── */
+.sdh-grid-overlay {
+  position: absolute;
+  inset: 0;
+  opacity: 0.015;
+  background-image:
+    linear-gradient(rgba(168,85,247,0.4) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(168,85,247,0.4) 1px, transparent 1px);
+  background-size: 60px 60px;
+  mask-image: radial-gradient(ellipse 60% 50% at 50% 50%, black  0%, transparent 70%);
+  -webkit-mask-image: radial-gradient(ellipse 60% 50% at 50% 50%, black 0%, transparent 70%);
+  pointer-events: none;
+}
+
+
+/* ════════════════════════════════════════════════════════════════
+   SIDEBAR
+════════════════════════════════════════════════════════════════ */
+.sdh-sidebar {
+  background:      var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border-right:    1px solid var(--glass-border);
+  box-shadow:      4px 0 32px rgba(0,0,0,0.45), inset -1px 0 0 rgba(168,85,247,0.03);
+  position:        relative;
+  z-index:         1;
+}
+
+/* Vertical accent gradient line on left edge */
+.sdh-sidebar::before {
+  content:    '';
+  position:   absolute;
+  top: 0; bottom: 0; left: 0;
+  width:      2px;
+  background: linear-gradient(to bottom,
+    transparent       0%,
+    rgba(168,85,247,0.6) 20%,
+    rgba(255,119,0,0.4)  50%,
+    rgba(168,85,247,0.3) 80%,
+    transparent       100%);
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* Subtle shimmer on sidebar edge */
+.sdh-sidebar::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: linear-gradient(180deg, rgba(168,85,247,0.02) 0%, transparent 30%, transparent 70%, rgba(168,85,247,0.01) 100%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ─── Sidebar header ─────────────────────────────────────────── */
+.sdh-sidebar-hdr {
+  background:    linear-gradient(135deg, rgba(20,20,58,0.95), rgba(14,14,36,0.98));
+  border-bottom: 1px solid rgba(37,37,80,0.45);
+  box-shadow:    0 1px 0 rgba(168,85,247,0.06), 0 4px 14px rgba(0,0,0,0.25);
+  position:      relative;
+  z-index:       1;
+}
+
+/* Sandesh Glyph (sidebar header) */
+.sdh-sandesh-glyph {
+  display:    inline-flex;
+  align-items: center;
+  justify-content: center;
+  color:       #a855f7;
+  filter:      drop-shadow(0 0 6px rgba(168,85,247,0.8)) drop-shadow(0 0 12px rgba(168,85,247,0.4));
+  line-height: 1;
+  transition:  filter 0.3s ease;
+}
+.sdh-sandesh-glyph:hover {
+  filter: drop-shadow(0 0 10px rgba(168,85,247,1)) drop-shadow(0 0 20px rgba(192,132,252,0.6));
+}
+
+/* ─── Online count badge ────────────────────────────────────── */
+.sdh-online-count-badge {
+  color:      #86efac;
+  background: rgba(22,101,52,0.35);
+  border:     1px solid rgba(74,222,128,0.3);
+  box-shadow: 0 0 8px rgba(74,222,128,0.15);
+}
+
+/* ─── Search input ───────────────────────────────────────────── */
+.sdh-search-input {
+  background:    rgba(20,20,58,0.65);
+  border:        1px solid rgba(37,37,80,0.7);
+  border-radius: 12px;
+  outline:       none;
+  transition:    border-color var(--transition), box-shadow var(--transition), background var(--transition);
+}
+.sdh-search-input::placeholder {
+  color: var(--c-muted);
+  opacity: 0.7;
+}
+.sdh-search-input:hover {
+  border-color: rgba(168,85,247,0.25);
+  background:   rgba(20,20,58,0.75);
+}
+.sdh-search-input:focus {
+  border-color: rgba(168,85,247,0.55);
+  background:   rgba(20,20,58,0.9);
+  box-shadow:   0 0 0 3px rgba(168,85,247,0.08), 0 0 20px rgba(168,85,247,0.15);
+}
+
+/* ─── User list items ────────────────────────────────────────── */
+.sdh-user-item {
+  position:   relative;
+  overflow:   visible;
+  transition: background var(--transition), box-shadow var(--transition), transform var(--transition);
+  border-bottom: 1px solid rgba(37,37,80,0.12);
+}
+
+/* Left accent bar */
+.sdh-user-item::before {
+  content:    '';
+  position:   absolute;
+  left: 0; top: 0; bottom: 0;
+  width:      3px;
+  background: linear-gradient(to bottom, #a855f7, #FF7700);
+  border-radius: 0 3px 3px 0;
+  opacity:    0;
+  transform:  scaleY(0.4);
+  transition: opacity 0.25s, transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Hover glow backdrop */
+.sdh-user-item::after {
+  content:    '';
+  position:   absolute;
+  inset:      0;
+  background: radial-gradient(ellipse 80% 60% at 20% 50%, rgba(168,85,247,0.06) 0%, transparent 70%);
+  opacity:    0;
+  transition: opacity 0.3s;
+  pointer-events: none;
+}
+
+.sdh-user-item:hover {
+  background: rgba(168,85,247,0.04);
+}
+.sdh-user-item:hover::before {
+  opacity:   0.6;
+  transform: scaleY(0.7);
+}
+.sdh-user-item:hover::after {
+  opacity: 1;
+}
+
+/* Active — chat.js adds bg-divine-card */
+.sdh-user-item.active,
+.sdh-user-item.bg-divine-card,
+.sdh-user-item[class*="bg-divine-card"] {
+  background: rgba(20,20,58,0.75);
+  box-shadow: inset 0 0 0 1px rgba(168,85,247,0.12),
+              inset 3px 0 12px rgba(168,85,247,0.05);
+}
+.sdh-user-item.active::before,
+.sdh-user-item.bg-divine-card::before,
+.sdh-user-item[class*="bg-divine-card"]::before {
+  opacity:   1;
+  transform: scaleY(1);
+}
+
+/* ─── Username text ─────────────────────────────────────────── */
+.sdh-user-name {
+  transition: color var(--transition), text-shadow var(--transition);
+}
+.sdh-user-item:hover .sdh-user-name {
+  color: var(--c-text) !important;
+  text-shadow: 0 0 12px rgba(168,85,247,0.15);
+}
+
+/* ─── Avatars ────────────────────────────────────────────────── */
+.sdh-avatar {
+  border:     2px solid rgba(37,37,80,0.7);
+  transition: border-color 0.25s, box-shadow 0.25s, transform 0.25s;
+}
+.sdh-user-item:hover .sdh-avatar,
+.sdh-user-item.active .sdh-avatar {
+  border-color: rgba(168,85,247,0.45);
+  box-shadow:   0 0 14px rgba(168,85,247,0.25);
+  transform:    scale(1.04);
+}
+
+.sdh-avatar-initial {
+  background: linear-gradient(135deg, rgba(168,85,247,0.16), rgba(255,119,0,0.1));
+  border:     2px solid rgba(168,85,247,0.22);
+  color:      #a855f7;
+  transition: all 0.25s;
+}
+.sdh-user-item:hover .sdh-avatar-initial {
+  background: linear-gradient(135deg, rgba(168,85,247,0.26), rgba(255,119,0,0.16));
+  box-shadow: 0 0 16px rgba(168,85,247,0.3);
+  border-color: rgba(168,85,247,0.45);
+}
+
+/* ─── Online indicator dot ──────────────────────────────────── */
+.sdh-online-dot {
+  transition: all 0.3s;
+}
+.sdh-online-dot--on {
+  background: #4ade80;
+  border-color: var(--c-surface);
+  box-shadow: 0 0 8px rgba(74,222,128,0.6), 0 0 16px rgba(74,222,128,0.3);
+  animation: onlinePulse 2s ease-in-out infinite;
+}
+.sdh-online-dot--off {
+  background: rgba(100,100,140,0.5);
+  border-color: var(--c-surface);
+  box-shadow: none;
+}
+
+@keyframes onlinePulse {
+  0%, 100% { box-shadow: 0 0 8px rgba(74,222,128,0.6), 0 0 16px rgba(74,222,128,0.3); }
+  50%      { box-shadow: 0 0 4px rgba(74,222,128,0.4), 0 0 8px rgba(74,222,128,0.15); }
+}
+
+/* ─── Status text ────────────────────────────────────────────── */
+.sdh-status-online,
+.sdh-status-active {
+  color: rgba(74,222,128,0.85);
+}
+.sdh-status-offline,
+.sdh-status-inactive {
+  color: var(--c-muted);
+  opacity: 0.6;
+}
+
+/* ─── Unread badge ───────────────────────────────────────────── */
+.sdh-unread-badge {
+  background: linear-gradient(135deg, #a855f7, #FF7700);
+  color:      #07071A;
+  font-weight: 700;
+  min-width:  18px;
+  text-align: center;
+  box-shadow: 0 0 10px rgba(168,85,247,0.4), 0 2px 6px rgba(0,0,0,0.3);
+  animation:  badgePop 0.4s cubic-bezier(0.34,1.56,0.64,1);
+}
+
+/* ─── Sidebar footer ─────────────────────────────────────────── */
+.sdh-user-footer {
+  background:      rgba(10,10,28,0.88);
+  border-top:      1px solid rgba(37,37,80,0.35);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow:      0 -4px 20px rgba(0,0,0,0.3);
+  position:        relative;
+  z-index:         1;
+}
+
+.sdh-avatar-self {
+  background: linear-gradient(135deg, rgba(168,85,247,0.22), rgba(255,119,0,0.15));
+  border:     2px solid rgba(168,85,247,0.45);
+  color:      #a855f7;
+  box-shadow: 0 0 14px rgba(168,85,247,0.25);
+}
+
+/* ─── Key indicator ──────────────────────────────────────────── */
+.sdh-key-indicator {
+  background: #facc15;
+  box-shadow: 0 0 8px rgba(250,204,21,0.5);
+}
+
+/* ─── Icon button (generic) ──────────────────────────────────── */
+.sdh-icon-btn {
+  transition: color var(--transition), background var(--transition), transform var(--transition);
+}
+.sdh-icon-btn:hover {
+  color: var(--c-gold) !important;
+  background: rgba(168,85,247,0.08);
+  transform: scale(1.08);
+}
+
+
+/* ════════════════════════════════════════════════════════════════
+   CHAT PANEL
+════════════════════════════════════════════════════════════════ */
+.sdh-chat-panel {
+  background:       var(--c-deep);
+  /* Dot-grid sacred geometry background */
+  background-image:
+    radial-gradient(rgba(37,37,80,0.25) 1px, transparent 1px),
+    radial-gradient(ellipse 80% 50% at 30% 80%, rgba(20,10,60,0.5) 0%, transparent 70%),
+    radial-gradient(ellipse 60% 40% at 70% 10%, rgba(10,20,50,0.4) 0%, transparent 70%);
+  background-size:  28px 28px, 100% 100%, 100% 100%;
+  position:         relative;
+}
+
+/* ─── Chat header ────────────────────────────────────────────── */
+.sdh-chat-header {
+  background:      var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border-bottom:   1px solid var(--glass-border);
+  box-shadow:      0 4px 24px rgba(0,0,0,0.35);
+  position:        relative;
+  z-index:         5;
+}
+
+/* Gradient glow divider */
+.sdh-header-divider {
+  background: linear-gradient(
+    90deg,
+    transparent          0%,
+    rgba(168,85,247,0.15) 15%,
+    rgba(168,85,247,0.5) 30%,
+    rgba(255,119,0,0.4)  50%,
+    rgba(168,85,247,0.3) 70%,
+    rgba(168,85,247,0.15) 85%,
+    transparent          100%
+  );
+  animation: headerGlow 4s ease-in-out infinite alternate;
+  position:  relative;
+}
+
+/* Shimmer on divider */
+.sdh-header-divider::after {
+  content: '';
+  position: absolute;
+  inset: -1px 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.15) 50%, transparent 100%);
+  background-size: 200% 100%;
+  animation: dividerShimmer 3s ease-in-out infinite;
+}
+
+@keyframes headerGlow {
+  0%   { opacity: 0.5; transform: scaleX(0.88); }
+  100% { opacity: 1;   transform: scaleX(1);    }
+}
+
+@keyframes dividerShimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ─── Chat header avatar ─────────────────────────────────────── */
+.sdh-chat-avatar {
+  background: linear-gradient(135deg, rgba(168,85,247,0.18), rgba(255,119,0,0.12));
+  border:     2px solid rgba(168,85,247,0.3);
+  color:      #a855f7;
+  transition: box-shadow 0.3s, border-color 0.3s, transform 0.3s;
+  box-shadow: 0 0 12px rgba(168,85,247,0.15);
+}
+
+/* ─── Kavach badge ───────────────────────────────────────────── */
+.sdh-kavach-badge {
+  background: linear-gradient(135deg, rgba(22,101,52,0.55), rgba(20,83,45,0.65));
+  border:     1px solid rgba(74,222,128,0.35);
+  color:      #86efac;
+  box-shadow: 0 0 12px rgba(74,222,128,0.18), inset 0 0 8px rgba(74,222,128,0.05);
+  animation:  kavachGlow 3s ease-in-out infinite alternate;
+}
+
+@keyframes kavachGlow {
+  0%   { box-shadow: 0 0 12px rgba(74,222,128,0.18), inset 0 0 8px rgba(74,222,128,0.05); }
+  100% { box-shadow: 0 0 20px rgba(74,222,128,0.25), inset 0 0 12px rgba(74,222,128,0.08); }
+}
+
+/* ─── Kavach pill (empty state) ───────────────────────────────── */
+.sdh-kavach-pill {
+  background: rgba(168,85,247,0.07);
+  border:     1px solid rgba(168,85,247,0.15);
+  box-shadow: 0 0 20px rgba(168,85,247,0.06);
+  transition: all 0.3s;
+}
+.sdh-kavach-pill:hover {
+  background: rgba(168,85,247,0.1);
+  box-shadow: var(--glow-gold);
+}
+
+
+/* ─── Messages area ──────────────────────────────────────────── */
+.sdh-messages-area {
+  overscroll-behavior: contain;
+  position: relative;
+  z-index:  1;
+}
+
+/* ─── Empty state ────────────────────────────────────────────── */
+.sdh-empty-state {
+  animation: fadeInUp 0.5s ease-out;
+}
+
+/* Orb container */
+.sdh-empty-orb {
+  position: relative;
+  width:    152px;
+  height:   152px;
+  display:  flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Soft ambient glow disk */
+.sdh-orb-glow {
+  position:      absolute;
+  inset:         0;
+  border-radius: 50%;
+  background:    radial-gradient(circle,
+    rgba(168,85,247,0.28)  0%,
+    rgba(129,140,248,0.12) 45%,
+    transparent            72%);
+  filter:        blur(4px);
+}
+
+/* Conic-gradient border ring (mask trick — no animation) */
+.sdh-orb-ring {
+  position:      absolute;
+  inset:         0;
+  border-radius: 50%;
+  background:    conic-gradient(
+    from 130deg,
+    #c084fc    0%,
+    #7c3aed   30%,
+    #818cf8   55%,
+    #a855f7   78%,
+    #c084fc  100%
+  );
+  -webkit-mask: radial-gradient(farthest-side,
+    transparent calc(100% - 1.8px),
+    #fff        calc(100% - 1.8px));
+  mask: radial-gradient(farthest-side,
+    transparent calc(100% - 1.8px),
+    #fff        calc(100% - 1.8px));
+  filter: drop-shadow(0 0 6px rgba(168,85,247,0.5));
+}
+
+/* Sandesh hero icon (empty state) */
+.sdh-sandesh-hero {
+  width:    92px;
+  height:   92px;
+  position: relative;
+  z-index:  2;
+  filter:
+    drop-shadow(0 0  8px rgba(168,85,247,0.9))
+    drop-shadow(0 0 18px rgba(168,85,247,0.55))
+    drop-shadow(0 0 36px rgba(129,140,248,0.30))
+    drop-shadow(0 2px 4px rgba(0,0,0,0.4));
+}
+
+/* Fade divider */
+.sdh-empty-divider {
+  width:      72px;
+  height:     1px;
+  background: linear-gradient(90deg,
+    transparent,
+    rgba(168,85,247,0.55) 40%,
+    rgba(192,132,252,0.55) 60%,
+    transparent);
+}
+
+/* SANDESH brand chip */
+.sdh-empty-badge {
+  display:        inline-block;
+  font-size:      9px;
+  font-weight:    700;
+  letter-spacing: 0.22em;
+  color:          rgba(192,132,252,0.9);
+  background:     rgba(168,85,247,0.1);
+  border:         1px solid rgba(168,85,247,0.28);
+  border-radius:  99px;
+  padding:        3px 12px;
+}
+
+/* Gradient headline */
+.sdh-empty-title {
+  font-size:      1rem;
+  font-weight:    700;
+  letter-spacing: 0.015em;
+  background:     linear-gradient(120deg, #f3e8ff 0%, #c084fc 45%, #818cf8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Muted subtitle */
+.sdh-empty-sub {
+  font-size:   0.72rem;
+  max-width:   200px;
+  color:       var(--c-muted);
+  line-height: 1.55;
+}
+
+/* Sandesh login icon */
+.sdh-sandesh-login-icon {
+  display: inline-flex;
+  filter:  drop-shadow(0 0 14px rgba(168,85,247,0.72))
+           drop-shadow(0 0 28px rgba(168,85,247,0.35));
+}
+
+/* Message status tick */
+.msg-status-tick {
+  display:     inline-flex;
+  align-items: center;
+  line-height: 1;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+/* ─── Typing indicator pill ──────────────────────────────────── */
+.sdh-typing-pill {
+  background:      rgba(20,20,58,0.8);
+  border:          1px solid rgba(168,85,247,0.16);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow:      0 2px 12px rgba(0,0,0,0.2);
+  animation:       fadeInUp 0.3s ease-out;
+}
+
+.sdh-typing-dot {
+  display:       block;
+  width:  6px;   height: 6px;
+  border-radius: 50%;
+  background:    rgba(168,85,247,0.7);
+  box-shadow:    0 0 6px rgba(168,85,247,0.4);
+  animation:     typingBounce 0.9s ease-in-out infinite;
+}
+
+@keyframes typingBounce {
+  0%, 100% { transform: translateY(0);    opacity: 0.4; }
+  45%      { transform: translateY(-5px); opacity: 1;   }
+}
+
+
+/* ════════════════════════════════════════════════════════════════
+   INPUT BAR
+════════════════════════════════════════════════════════════════ */
+.sdh-input-bar {
+  background:      rgba(10,10,28,0.9);
+  backdrop-filter: blur(24px) saturate(1.3);
+  -webkit-backdrop-filter: blur(24px) saturate(1.3);
+  border-top:      1px solid rgba(37,37,80,0.4);
+  box-shadow:      0 -8px 32px rgba(0,0,0,0.38);
+  position:        relative;
+  z-index:         5;
+}
+
+/* Subtle top glow on input bar */
+.sdh-input-bar::before {
+  content: '';
+  position: absolute;
+  top: -1px; left: 10%; right: 10%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(168,85,247,0.2), transparent);
+  pointer-events: none;
+}
+
+.sdh-message-input {
+  background:    rgba(20,20,58,0.6);
+  border:        1.5px solid rgba(37,37,80,0.7);
+  border-radius: 16px;
+  outline:       none;
+  transition:
+    border-color var(--transition),
+    box-shadow   0.35s ease,
+    background   var(--transition);
+}
+.sdh-message-input::placeholder {
+  color: var(--c-muted);
+  opacity: 0.6;
+}
+.sdh-message-input:hover {
+  border-color: rgba(168,85,247,0.25);
+  background:   rgba(20,20,58,0.7);
+}
+.sdh-message-input:focus {
+  border-color: rgba(168,85,247,0.6);
+  background:   rgba(20,20,58,0.88);
+  box-shadow:
+    0 0 0 3px rgba(168,85,247,0.08),
+    0 0 22px rgba(168,85,247,0.2),
+    inset 0 0 12px rgba(168,85,247,0.03);
+}
+
+/* File preview */
+.sdh-file-preview {
+  background:   rgba(10,10,28,0.7);
+  border:       1px solid rgba(37,37,80,0.6);
+  color:        var(--c-muted);
+  animation:    fadeInUp 0.2s ease-out;
+}
+
+/* ─── Action buttons (file / emoji) ─────────────────────────── */
+.sdh-action-btn {
+  background: rgba(20,20,58,0.5);
+  border:     1px solid rgba(37,37,80,0.6);
+  color:      var(--c-muted);
+  transition: all var(--transition);
+  position:   relative;
+  overflow:   hidden;
+}
+
+/* Glow ring on hover */
+.sdh-action-btn::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  background: linear-gradient(135deg, rgba(168,85,247,0.3), rgba(255,119,0,0.2));
+  opacity: 0;
+  transition: opacity 0.3s;
+  z-index: -1;
+  filter: blur(4px);
+}
+
+.sdh-action-btn:hover {
+  background:   rgba(20,20,58,0.85);
+  border-color: rgba(168,85,247,0.45);
+  color:        #a855f7;
+  box-shadow:   var(--glow-gold);
+  transform:    translateY(-2px) scale(1.05);
+}
+.sdh-action-btn:hover::after {
+  opacity: 1;
+}
+.sdh-action-btn:active {
+  transform: translateY(0) scale(0.97);
+}
+
+/* ─── Send button ────────────────────────────────────────────── */
+.sdh-send-btn {
+  background: linear-gradient(135deg, #a855f7, #818cf8);
+  color:      #07071A;
+  border:     none;
+  box-shadow: 0 4px 16px rgba(168,85,247,0.35),
+              0 0 24px rgba(168,85,247,0.15);
+  transition: all var(--transition);
+  position:   relative;
+  overflow:   hidden;
+}
+
+/* Inner glow shimmer */
+.sdh-send-btn::before {
+  content: '';
+  position: absolute;
+  top: -50%; left: -50%;
+  width: 200%; height: 200%;
+  background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.2) 50%, transparent 70%);
+  transform: rotate(45deg) translateX(-100%);
+  transition: transform 0.6s;
+}
+.sdh-send-btn:hover::before {
+  transform: rotate(45deg) translateX(100%);
+}
+
+.sdh-send-btn:hover {
+  background: linear-gradient(135deg, #818cf8, #FF7700);
+  box-shadow: 0 0 30px rgba(245,158,11,0.5),
+              0 0 60px rgba(168,85,247,0.2),
+              0 4px 12px rgba(0,0,0,0.3);
+  transform:  translateY(-2px) scale(1.06);
+}
+.sdh-send-btn:active {
+  transform: translateY(0) scale(0.96);
+}
+
+/* ─── Call buttons ───────────────────────────────────────────── */
+.sdh-call-btn {
+  border:     1px solid rgba(37,37,80,0.7);
+  background: rgba(20,20,58,0.5);
+  color:      var(--c-muted);
+  transition: all var(--transition);
+}
+.sdh-voice-btn:hover {
+  background:   rgba(22,101,52,0.3);
+  border-color: rgba(74,222,128,0.5);
+  color:        #4ade80;
+  box-shadow:   var(--glow-green);
+  transform:    translateY(-2px) scale(1.08);
+}
+.sdh-video-btn:hover {
+  background:   rgba(30,64,175,0.3);
+  border-color: rgba(96,165,250,0.5);
+  color:        #60a5fa;
+  box-shadow:   var(--glow-blue);
+  transform:    translateY(-2px) scale(1.08);
+}
+
+/* ─── Call accept / reject buttons ────────────────────────────── */
+.sdh-call-accept {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  box-shadow: 0 0 30px rgba(34,197,94,0.4), 0 4px 12px rgba(0,0,0,0.3);
+}
+.sdh-call-reject {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  box-shadow: 0 0 30px rgba(239,68,68,0.4), 0 4px 12px rgba(0,0,0,0.3);
+}
+.sdh-call-end-btn {
+  background: linear-gradient(135deg, #ef4444, #dc2626) !important;
+  box-shadow: 0 0 20px rgba(239,68,68,0.35);
+}
+
+/* ─── Emoji picker ───────────────────────────────────────────── */
+.sdh-emoji-picker {
+  background:      rgba(14,14,36,0.95);
+  border:          1px solid rgba(37,37,80,0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow:      0 16px 48px rgba(0,0,0,0.55), var(--glow-gold);
+  animation:       emojiPopIn 0.2s cubic-bezier(0.34,1.56,0.64,1);
+}
+
+.sdh-emoji-btn {
+  transition: transform 0.15s cubic-bezier(0.34,1.56,0.64,1), background 0.15s;
+  border-radius: 8px;
+}
+.sdh-emoji-btn:hover {
+  transform:  scale(1.3);
+  background: rgba(168,85,247,0.1);
+}
+
+@keyframes emojiPopIn {
+  0%   { opacity: 0; transform: scale(0.9) translateY(8px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+
+/* ════════════════════════════════════════════════════════════════
+   FORM INPUTS  (auth pages)
+════════════════════════════════════════════════════════════════ */
+.sdh-input {
+  display:       block;
+  width:         100%;
+  padding:       0.65rem 1rem;
+  border-radius: 0.75rem;
+  font-size:     0.875rem;
+  background:    var(--c-card);
+  border:        1px solid var(--c-border);
+  color:         var(--c-text);
+  outline:       none;
+  transition:    border-color var(--transition), box-shadow var(--transition);
+}
+.sdh-input::placeholder { color: var(--c-muted); }
+.sdh-input:focus {
+  border-color: var(--c-gold);
+  box-shadow:   0 0 0 3px rgba(168,85,247,0.12), 0 0 16px rgba(168,85,247,0.1);
+}
+.sdh-input:hover:not(:focus) {
+  border-color: rgba(168,85,247,0.3);
+}
+
+
+/* ════════════════════════════════════════════════════════════════
+   MESSAGE BUBBLE STYLES (for JS-rendered bubbles)
+════════════════════════════════════════════════════════════════ */
+
+/* Sent message bubbles - applied by chat.js class names */
+.msg-bubble,
+[class*="bg-gradient-to-br"][class*="from-divine-gold"] {
+  position: relative;
+}
+
+/* Glow effect for sent messages (gradient gold bubbles) */
+[class*="bg-gradient-to-br"][class*="from-divine-gold"] {
+  box-shadow: 0 2px 12px rgba(168,85,247,0.2),
+              0 0 20px rgba(168,85,247,0.08);
+}
+
+/* Received message bubbles - glass effect */
+[class*="bg-divine-card"][class*="border-divine-border"] {
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+
+/* ════════════════════════════════════════════════════════════════
+   CALL CONTROL BUTTONS
+════════════════════════════════════════════════════════════════ */
+.call-control-btn {
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  width: 3rem; height: 3rem;
+  border-radius:   50%;
+  border:          1px solid var(--c-border);
+  cursor:          pointer;
+  transition:      all var(--transition);
+}
+.call-control-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 0 16px rgba(168,85,247,0.2);
+}
+
+
+/* ════════════════════════════════════════════════════════════════
+   FEATURE CARDS  (landing page)
+════════════════════════════════════════════════════════════════ */
+.feature-card {
+  transition: transform var(--transition), border-color var(--transition), box-shadow var(--transition);
+}
+.feature-card:hover {
+  transform:    translateY(-4px);
+  border-color: rgba(168,85,247,0.35);
+  box-shadow:   var(--glow-gold);
+}
+
+
+/* ════════════════════════════════════════════════════════════════
+   GLOW UTILITIES
+════════════════════════════════════════════════════════════════ */
+.glow-gold       { box-shadow: var(--glow-gold); }
+.text-glow-gold  { text-shadow: 0 0 14px rgba(168,85,247,0.65); }
+
+/* Electric border animation */
+.electric-border {
+  position:      absolute;
+  inset:         0;
+  border-radius: 1rem;
+  padding:       2px;
+  background:    linear-gradient(90deg, #a855f7, #FF7700, #818cf8, #a855f7);
+  background-size: 300% 300%;
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite:  exclude;
+  animation:       electricBorder 2.5s linear infinite;
+  pointer-events:  none;
+}
+
+@keyframes electricBorder {
+  0%   { background-position: 0%   50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0%   50%; }
+}
+
+/* ─── Notification allow hover ───────────────────────────────── */
+.sdh-notif-allow-btn:hover {
+  text-shadow: 0 0 10px rgba(168,85,247,0.5);
+}
+
+/* ─── Remove-user modal confirm button ───────────────────────── */
+.sdh-remove-btn {
+  transition: background 0.2s ease, box-shadow 0.2s ease;
+}
+.sdh-remove-btn:hover {
+  background: rgba(139, 92, 246, 0.9) !important;
+  box-shadow: 0 0 18px rgba(139, 92, 246, 0.45);
+}
+
+
+/* ════════════════════════════════════════════════════════════════
+   ANIMATIONS
+════════════════════════════════════════════════════════════════ */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+
+@keyframes msgAppear {
+  0%   { opacity: 0; transform: scale(0.92) translateY(8px); }
+  100% { opacity: 1; transform: scale(1)    translateY(0);   }
+}
+
+@keyframes badgePop {
+  0%   { transform: scale(0);    opacity: 0; }
+  60%  { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(1);    opacity: 1; }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+
+/* Hover glow pulse — usable as a utility */
+@keyframes glowPulse {
+  0%, 100% { box-shadow: 0 0 10px rgba(168,85,247,0.2); }
+  50%      { box-shadow: 0 0 20px rgba(168,85,247,0.4); }
+}
+
+/* .animate-slide-in    { animation: slideIn    0.3s  ease-out; } */
+.animate-msg-appear  { animation: msgAppear  0.35s cubic-bezier(0.34,1.4,0.64,1); }
+.animate-badge-pop   { animation: badgePop   0.4s  cubic-bezier(0.34,1.56,0.64,1); }
+.animate-float       { animation: float      4s    ease-in-out infinite; }
+.animate-glow-pulse  { animation: glowPulse  2s    ease-in-out infinite; }
+.animate-fade-in-up  { animation: fadeInUp   0.5s  ease-out; }
+
+
+/* ════════════════════════════════════════════════════════════════
+   SPINNER
+════════════════════════════════════════════════════════════════ */
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.sdh-spinner {
+  width:  1.25rem; height: 1.25rem;
+  border: 2px solid var(--c-border);
+  border-top-color: var(--c-gold);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+
+/* ════════════════════════════════════════════════════════════════
+   CALL & VIDEO OVERLAY
+════════════════════════════════════════════════════════════════ */
+#callOverlay        { backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); }
+#remoteVideo,
+#localVideo         { background: #000; }
+#messagesContainer  { overscroll-behavior: contain; }
+
+/* Typing dot legacy selector */
+#typingBubble span.animate-bounce { animation-duration: 0.9s; }
+
+/* Textarea auto-resize */
+#messageInput { transition: height 0.1s ease; }
+
+
+/* ════════════════════════════════════════════════════════════════
+   MOBILE
+════════════════════════════════════════════════════════════════ */
+@media (max-width: 640px) {
+  .msg-bubble { max-width: 88%; }
+  #callOverlay #activeCallPanel { border-radius: 0; }
+
+  .sdh-sacred-ring-outer { width: 90px !important; height: 90px !important; }
+  .sdh-sacred-ring-mid   { width: 66px !important; height: 66px !important; }
+  .sdh-sacred-ring-inner { width: 42px !important; height: 42px !important; }
+  .sdh-empty-orb         { width: 116px !important; height: 116px !important; }
+  .sdh-sandesh-hero      { width: 68px  !important; height: 68px  !important; }
+
+  .sdh-particle:nth-child(n+20) { display: none; }
+}
+
+
+/* ─── Admin panel branding ───────────────────────────────────── */
+#header-branding {
+  background: linear-gradient(135deg, var(--c-deep), var(--c-surface));
+}
+
+
+/* ════════════════════════════════════════════════════════════════
+   COSMIC NEON THEME — Sandesh Purple override layer
+   Converts all gold/amber accent to neon purple/indigo palette.
+════════════════════════════════════════════════════════════════ */
+
+/* ── Sidebar accent bar ──────────────────────────────────────── */
+.sdh-sidebar::before {
+  background: linear-gradient(to bottom,
+    transparent           0%,
+    rgba(168,85,247,0.7)  20%,
+    rgba(129,140,248,0.5) 50%,
+    rgba(168,85,247,0.35) 80%,
+    transparent           100%);
+}
+
+/* ── Sidebar header ──────────────────────────────────────────── */
+.sdh-sidebar-hdr {
+  background:    linear-gradient(135deg, rgba(19,13,46,0.97), rgba(13,5,42,0.99));
+  border-bottom-color: rgba(42,23,88,0.55);
+}
+
+/* ── Sandesh glyph → purple (light theme override) ──────────── */
+.sdh-sandesh-glyph {
+  filter: drop-shadow(0 0 10px rgba(168,85,247,0.7)) drop-shadow(0 0 22px rgba(129,140,248,0.5));
+}
+
+/* ── Search input → purple focus ────────────────────────────── */
+.sdh-search-input {
+  background: rgba(19,13,46,0.65);
+  border-color: rgba(42,23,88,0.7);
+}
+.sdh-search-input:hover {
+  border-color: rgba(168,85,247,0.3);
+  background:   rgba(19,13,46,0.75);
+}
+.sdh-search-input:focus {
+  border-color: rgba(168,85,247,0.6);
+  background:   rgba(19,13,46,0.92);
+  box-shadow:   0 0 0 3px rgba(168,85,247,0.1), 0 0 20px rgba(168,85,247,0.18);
+}
+
+/* ── User item hover → purple ────────────────────────────────── */
+.sdh-user-item:hover { background: rgba(168,85,247,0.04); }
+.sdh-user-item::before {
+  background: linear-gradient(to bottom, #a855f7, #818cf8);
+}
+.sdh-user-item::after {
+  background: radial-gradient(ellipse 80% 60% at 20% 50%, rgba(168,85,247,0.06) 0%, transparent 70%);
+}
+
+/* ── Avatar hover effects → purple ──────────────────────────── */
+.sdh-user-item:hover .sdh-avatar,
+.sdh-user-item.active .sdh-avatar {
+  border-color: rgba(168,85,247,0.55);
+  box-shadow:   0 0 14px rgba(168,85,247,0.32);
+}
+.sdh-avatar-initial {
+  background:  linear-gradient(135deg, rgba(168,85,247,0.18), rgba(129,140,248,0.12));
+  border-color: rgba(168,85,247,0.3);
+  color: #a855f7;
+}
+.sdh-user-item:hover .sdh-avatar-initial {
+  background:  linear-gradient(135deg, rgba(168,85,247,0.28), rgba(129,140,248,0.18));
+  box-shadow:  0 0 16px rgba(168,85,247,0.38);
+  border-color: rgba(168,85,247,0.56);
+}
+
+/* ── Active user item ────────────────────────────────────────── */
+.sdh-user-item.active,
+.sdh-user-item.bg-divine-card,
+.sdh-user-item[class*="bg-divine-card"] {
+  background: rgba(19,13,46,0.82);
+  box-shadow: inset 0 0 0 1px rgba(168,85,247,0.16),
+              inset 3px 0 12px rgba(168,85,247,0.06);
+}
+.sdh-user-item.active::before,
+.sdh-user-item.bg-divine-card::before,
+.sdh-user-item[class*="bg-divine-card"]::before {
+  opacity: 1; transform: scaleY(1);
+}
+
+/* ── Sidebar footer ──────────────────────────────────────────── */
+.sdh-user-footer {
+  background:   rgba(10,4,30,0.92);
+  border-top-color: rgba(42,23,88,0.45);
+}
+.sdh-avatar-self {
+  background:  linear-gradient(135deg, rgba(168,85,247,0.25), rgba(129,140,248,0.18));
+  border-color: rgba(168,85,247,0.55);
+  color: #a855f7;
+  box-shadow:  0 0 14px rgba(168,85,247,0.3);
+}
+
+/* ── Chat header divider → purple gradient ───────────────────── */
+.sdh-header-divider {
+  background: linear-gradient(
+    90deg,
+    transparent            0%,
+    rgba(168,85,247,0.2)   20%,
+    rgba(168,85,247,0.55)  35%,
+    rgba(129,140,248,0.45) 50%,
+    rgba(168,85,247,0.35)  65%,
+    rgba(168,85,247,0.2)   80%,
+    transparent            100%
+  );
+}
+.sdh-header-divider::after {
+  background: linear-gradient(90deg, transparent 0%, rgba(168,85,247,0.22) 50%, transparent 100%);
+  background-size: 200% 100%;
+}
+
+/* ── Chat avatar → purple ────────────────────────────────────── */
+.sdh-chat-avatar {
+  background:  linear-gradient(135deg, rgba(168,85,247,0.2), rgba(129,140,248,0.14));
+  border-color: rgba(168,85,247,0.4);
+  color: #a855f7;
+  box-shadow:  0 0 16px rgba(168,85,247,0.22);
+}
+
+/* ── Ambient orbs → cosmic purple ───────────────────────────── */
+.sdh-orb-1 { background: radial-gradient(circle, #7c3aed, #4f46e5); }
+.sdh-orb-3 { background: radial-gradient(circle, #a855f7, #6366f1); opacity: 0.05; }
+.sdh-orb-4 { background: radial-gradient(circle, #818cf8, #7c3aed); opacity: 0.04; }
+
+/* ── Floating particles → purple ────────────────────────────── */
+.sdh-particle {
+  background: rgba(168,85,247,0.45);
+  box-shadow: 0 0 6px 1px rgba(168,85,247,0.22);
+}
+.sdh-particle:nth-child(3n) { background: rgba(129,140,248,0.4); }
+.sdh-particle:nth-child(5n) { background: rgba(192,132,252,0.35); }
+.sdh-particle:nth-child(7n) {
+  background: rgba(168,85,247,0.25);
+  box-shadow: 0 0 10px 2px rgba(168,85,247,0.18);
+}
+
+/* ── Message input → purple focus ───────────────────────────── */
+.sdh-message-input {
+  background:   rgba(19,13,46,0.62);
+  border-color: rgba(42,23,88,0.7);
+}
+.sdh-message-input:hover {
+  border-color: rgba(168,85,247,0.3);
+  background:   rgba(19,13,46,0.72);
+}
+.sdh-message-input:focus {
+  border-color: rgba(168,85,247,0.65);
+  background:   rgba(19,13,46,0.9);
+  box-shadow:
+    0 0 0 3px rgba(168,85,247,0.1),
+    0 0 22px rgba(168,85,247,0.22),
+    inset 0 0 12px rgba(168,85,247,0.04);
+}
+
+/* ── Form inputs → purple focus ─────────────────────────────── */
+.sdh-input { background: var(--c-card); border-color: var(--c-border); }
+.sdh-input:focus {
+  border-color: var(--c-gold);
+  box-shadow:   0 0 0 3px rgba(168,85,247,0.15), 0 0 16px rgba(168,85,247,0.12);
+}
+.sdh-input:hover:not(:focus) {
+  border-color: rgba(168,85,247,0.35);
+}
+
+/* ── Action buttons → purple hover ──────────────────────────── */
+.sdh-action-btn {
+  background: rgba(19,13,46,0.52);
+  border-color: rgba(42,23,88,0.65);
+}
+.sdh-action-btn::after {
+  background: linear-gradient(135deg, rgba(168,85,247,0.3), rgba(129,140,248,0.2));
+}
+.sdh-action-btn:hover {
+  background:   rgba(19,13,46,0.88);
+  border-color: rgba(168,85,247,0.5);
+  color: #a855f7;
+  box-shadow:   0 0 18px rgba(168,85,247,0.32);
+}
+
+/* ── Send button → purple gradient ──────────────────────────── */
+.sdh-send-btn {
+  background: linear-gradient(135deg, #a855f7, #7c3aed);
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(168,85,247,0.45), 0 0 24px rgba(168,85,247,0.2);
+}
+.sdh-send-btn:hover {
+  background: linear-gradient(135deg, #7c3aed, #6366f1);
+  box-shadow: 0 0 30px rgba(168,85,247,0.62),
+              0 0 60px rgba(129,140,248,0.28),
+              0 4px 12px rgba(0,0,0,0.3);
+}
+
+/* ── Input bar top glow → purple ─────────────────────────────── */
+.sdh-input-bar::before {
+  background: linear-gradient(90deg, transparent, rgba(168,85,247,0.22), transparent);
+}
+
+/* ── Unread badge → purple ───────────────────────────────────── */
+.sdh-unread-badge {
+  background: linear-gradient(135deg, #a855f7, #7c3aed);
+  color: #fff;
+  box-shadow: 0 0 10px rgba(168,85,247,0.5), 0 2px 6px rgba(0,0,0,0.3);
+}
+
+/* ── Online count badge → keep green ────────────────────────── */
+
+/* ── Typing pill + dots → purple ────────────────────────────── */
+.sdh-typing-pill {
+  background:   rgba(19,13,46,0.82);
+  border-color: rgba(168,85,247,0.18);
+}
+.sdh-typing-dot {
+  background: rgba(168,85,247,0.8);
+  box-shadow: 0 0 6px rgba(168,85,247,0.5);
+}
+
+/* ── Orb ring → purple conic (already set via base, reinforce glow) */
+.sdh-orb-ring {
+  filter: drop-shadow(0 0 8px rgba(168,85,247,0.6));
+}
+.sdh-sandesh-hero {
+  filter:
+    drop-shadow(0 0  8px rgba(168,85,247,0.95))
+    drop-shadow(0 0 20px rgba(168,85,247,0.60))
+    drop-shadow(0 0 40px rgba(129,140,248,0.35))
+    drop-shadow(0 2px 4px rgba(0,0,0,0.4));
+}
+
+/* ── Emoji picker → purple ───────────────────────────────────── */
+.sdh-emoji-picker {
+  background:   rgba(13,5,42,0.97);
+  border-color: rgba(42,23,88,0.82);
+  box-shadow:   0 16px 48px rgba(0,0,0,0.6), 0 0 22px rgba(168,85,247,0.22);
+}
+.sdh-emoji-btn:hover { background: rgba(168,85,247,0.12); }
+
+/* ── Feature card hover → purple glow ───────────────────────── */
+.feature-card:hover {
+  border-color: rgba(168,85,247,0.42);
+  box-shadow:   0 0 22px rgba(168,85,247,0.28);
+}
+
+/* ── Electric border → purple gradient ──────────────────────── */
+.electric-border {
+  background: linear-gradient(90deg, #a855f7, #818cf8, #7c3aed, #a855f7);
+  background-size: 300% 300%;
+}
+
+/* ── Key indicator ───────────────────────────────────────────── */
+.sdh-key-indicator { background: #a855f7; box-shadow: 0 0 8px rgba(168,85,247,0.55); }
+
+/* ── Notification allow btn hover ───────────────────────────── */
+.sdh-notif-allow-btn:hover { text-shadow: 0 0 10px rgba(168,85,247,0.55); }
+
+/* ── Call control btn glow ───────────────────────────────────── */
+.call-control-btn:hover { box-shadow: 0 0 16px rgba(168,85,247,0.25); }
+
+/* ── Text selection → purple ─────────────────────────────────── */
+::selection { background: rgba(168,85,247,0.35); color: #fff; }
+
+/* ── Focus visible → purple ──────────────────────────────────── */
+:focus-visible { outline-color: rgba(168,85,247,0.6); }
+
+/* ── Kavach / sdh-kavach-badge → purple ─────────────────────── */
+.sdh-kavach-badge {
+  background:  linear-gradient(135deg, rgba(74,58,180,0.55), rgba(58,46,160,0.65));
+  border-color: rgba(129,140,248,0.38);
+  color: #a5b4fc;
+  box-shadow:  0 0 12px rgba(129,140,248,0.2), inset 0 0 8px rgba(129,140,248,0.06);
+}
+
+/* ── Sent message bubble glow → purple ──────────────────────── */
+[class*="bg-gradient-to-br"][class*="from-divine-gold"] {
+  box-shadow: 0 2px 12px rgba(168,85,247,0.28), 0 0 20px rgba(168,85,247,0.1);
+}
+
+/* ── Date separator → subtle purple ─────────────────────────── */
+.sdh-chat-panel .flex.items-center.gap-3.my-4 span {
+  background:   var(--c-deep);
+  border-color: rgba(42,23,88,0.5);
+}
+
+/* ── Chat wrap background → cosmic purple radial ─────────────── */
+.sdh-chat-wrap {
+  background: var(--c-deep);
+  background-image:
+    radial-gradient(ellipse 70% 60% at 15% 50%, rgba(59,31,122,0.5)  0%, transparent 70%),
+    radial-gradient(ellipse 60% 50% at 85% 50%, rgba(49,46,129,0.4)  0%, transparent 70%);
+}
+
+/* ── Grid overlay → subtle purple tint ──────────────────────── */
+.sdh-grid-overlay {
+  background-image:
+    linear-gradient(rgba(168,85,247,0.3) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(168,85,247,0.3) 1px, transparent 1px);
+}
+
+
+/* ════════════════════════════════════════════════════════════════
+   LIGHT THEME OVERRIDES
+════════════════════════════════════════════════════════════════ */
+[data-theme="light"] .sdh-sidebar {
+  background:   rgba(248,247,255,0.95);
+  border-right-color: rgba(200,190,240,0.5);
+  box-shadow:   4px 0 24px rgba(80,40,160,0.08);
+}
+[data-theme="light"] .sdh-sidebar::before {
+  background: linear-gradient(to bottom,
+    transparent           0%,
+    rgba(168,85,247,0.4)  20%,
+    rgba(129,140,248,0.3) 50%,
+    rgba(168,85,247,0.2)  80%,
+    transparent           100%);
+}
+[data-theme="light"] .sdh-sidebar-hdr {
+  background:   rgba(243,240,255,0.98);
+  border-bottom: 1px solid rgba(200,190,240,0.5);
+  box-shadow:   none;
+}
+[data-theme="light"] .sdh-search-input {
+  background:   rgba(230,225,255,0.7);
+  border-color: rgba(180,170,230,0.6);
+  color:        var(--c-text);
+}
+[data-theme="light"] .sdh-search-input:focus {
+  background:   rgba(240,238,255,0.95);
+  border-color: rgba(168,85,247,0.5);
+}
+[data-theme="light"] .sdh-user-item:hover {
+  background: rgba(168,85,247,0.07);
+}
+[data-theme="light"] .sdh-user-item:hover .sdh-user-name {
+  color: #1A1A2E !important;
+}
+[data-theme="light"] .sdh-user-item.active,
+[data-theme="light"] .sdh-user-item.bg-divine-card,
+[data-theme="light"] .sdh-user-item[class*="bg-divine-card"] {
+  background: rgba(200,190,245,0.45);
+  box-shadow: inset 0 0 0 1px rgba(168,85,247,0.15);
+}
+[data-theme="light"] .sdh-user-footer {
+  background:   rgba(240,238,255,0.96);
+  border-top:   1px solid rgba(200,190,240,0.5);
+  box-shadow:   none;
+}
+[data-theme="light"] .sdh-avatar-initial {
+  background: linear-gradient(135deg, rgba(168,85,247,0.15), rgba(129,140,248,0.1));
+  border-color: rgba(168,85,247,0.28);
+}
+[data-theme="light"] .sdh-cosmic-bg { display: none; }
+[data-theme="light"] .sdh-chat-panel {
+  background:       #F4F2FC;
+  background-image:
+    radial-gradient(rgba(120,80,200,0.10) 1px, transparent 1px),
+    radial-gradient(ellipse 80% 50% at 30% 80%, rgba(168,85,247,0.06) 0%, transparent 70%),
+    radial-gradient(ellipse 60% 40% at 70% 10%, rgba(129,140,248,0.05) 0%, transparent 70%);
+  background-size:  28px 28px, 100% 100%, 100% 100%;
+}
+[data-theme="light"] .sdh-chat-header {
+  background:   rgba(244,242,252,0.97);
+  border-bottom: 1px solid rgba(200,190,240,0.5);
+  box-shadow:   0 2px 12px rgba(80,40,160,0.06);
+}
+[data-theme="light"] .sdh-input-bar {
+  background:   rgba(240,238,255,0.96);
+  border-top:   1px solid rgba(200,190,240,0.5);
+  box-shadow:   0 -4px 16px rgba(80,40,160,0.05);
+}
+[data-theme="light"] .sdh-message-input {
+  background:   rgba(228,224,252,0.75);
+  border-color: rgba(180,170,230,0.6);
+  color:        var(--c-text);
+}
+[data-theme="light"] .sdh-message-input:focus {
+  background:   rgba(238,235,255,0.95);
+  border-color: rgba(168,85,247,0.55);
+}
+[data-theme="light"] .sdh-action-btn {
+  background:   rgba(220,215,250,0.7);
+  border-color: rgba(170,160,230,0.55);
+  color:        var(--c-muted);
+}
+[data-theme="light"] .sdh-action-btn:hover {
+  background:   rgba(200,192,240,0.9);
+  border-color: rgba(168,85,247,0.45);
+  color:        #6d28d9;
+}
+[data-theme="light"] .sdh-typing-pill {
+  background:   rgba(235,230,255,0.92);
+  border-color: rgba(168,85,247,0.2);
+}
+[data-theme="light"] .sdh-typing-dot {
+  background: rgba(109,40,217,0.65);
+  box-shadow: 0 0 6px rgba(109,40,217,0.3);
+}
+[data-theme="light"] .sdh-emoji-picker {
+  background:   rgba(243,240,255,0.98);
+  border-color: rgba(200,190,240,0.7);
+  box-shadow:   0 16px 40px rgba(80,40,160,0.15);
+}
+[data-theme="light"] .sdh-emoji-btn:hover {
+  background: rgba(168,85,247,0.1);
+}
+[data-theme="light"] .sdh-empty-title {
+  background: linear-gradient(120deg, #5b21b6 0%, #7c3aed 50%, #4f46e5 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+[data-theme="light"] .sdh-empty-badge {
+  color:      rgba(109,40,217,0.9);
+  background: rgba(168,85,247,0.1);
+  border-color: rgba(168,85,247,0.28);
+}
+[data-theme="light"] .sdh-empty-divider {
+  background: linear-gradient(90deg, transparent, rgba(109,40,217,0.4) 40%, rgba(99,102,241,0.4) 60%, transparent);
+}
+[data-theme="light"] .sdh-kavach-badge {
+  background:   rgba(109,40,217,0.1);
+  border-color: rgba(109,40,217,0.22);
+  color:        #5b21b6;
+  box-shadow:   none;
+}
+[data-theme="light"] .sdh-call-btn {
+  background:   rgba(220,215,250,0.7);
+  border-color: rgba(170,160,230,0.55);
+}
+[data-theme="light"] .sdh-input {
+  background:   rgba(235,232,255,0.9);
+  border-color: rgba(180,170,230,0.6);
+}
+
+
+/* ════════════════════════════════════════════════════════════════
+   SELECTION HIGHLIGHT
+════════════════════════════════════════════════════════════════ */
+::selection {
+  background: rgba(168,85,247,0.35);
+  color:      #fff;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   FOCUS VISIBLE (accessibility)
+════════════════════════════════════════════════════════════════ */
+:focus-visible {
+  outline: 2px solid rgba(168,85,247,0.6);
+  outline-offset: 2px;
+}

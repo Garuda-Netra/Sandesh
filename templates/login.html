@@ -1,0 +1,61 @@
+﻿{% extends "base.html" %}
+
+{% block title %}Login — Sandesh{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex items-center justify-center px-4 py-16">
+  <div class="w-full max-w-md bg-divine-card border border-divine-border rounded-2xl p-8 shadow-divine">
+    <div class="text-center mb-8">
+      <div class="flex justify-center mb-3 select-none">
+        <div class="sdh-sandesh-login-icon">
+          <svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-14 h-14">
+            <path d="M48 6H18a8 8 0 00-8 8v16a8 8 0 008 8h4l-4 10 12-10h16a8 8 0 008-8V14a8 8 0 00-8-8z"
+                  fill="rgba(168,85,247,0.15)" stroke="rgba(168,85,247,0.7)" stroke-width="1.5"/>
+            <circle cx="26" cy="22" r="2.5" fill="rgba(192,132,252,0.9)"/>
+            <circle cx="33" cy="22" r="2.5" fill="rgba(192,132,252,0.9)"/>
+            <circle cx="40" cy="22" r="2.5" fill="rgba(192,132,252,0.9)"/>
+          </svg>
+        </div>
+      </div>
+      <h1 class="text-3xl font-semibold text-divine-text">Sign in to <span class="sandesh-nav-brand font-bold">Sandesh</span></h1>
+      <p class="text-divine-muted text-sm mt-2">Use your username and password</p>
+    </div>
+
+    <form method="post" novalidate class="space-y-5">
+      {% csrf_token %}
+
+      {% if form.non_field_errors %}
+      <div class="p-3 rounded-lg bg-red-900/30 border border-red-700 text-red-200 text-sm">
+        {% for error in form.non_field_errors %}{{ error }}{% endfor %}
+      </div>
+      {% endif %}
+
+      <div>
+        <label class="block text-sm text-divine-muted mb-2" for="{{ form.username.id_for_label }}">Username</label>
+        <input id="{{ form.username.id_for_label }}" name="{{ form.username.html_name }}" value="{{ form.username.value|default:'' }}" type="text" autocomplete="username" class="sdh-input w-full {% if form.username.errors %}border-red-500{% endif %}">
+        {% if form.username.errors %}<p class="mt-1 text-xs text-red-400">{{ form.username.errors.0 }}</p>{% endif %}
+      </div>
+
+      <div>
+        <label class="block text-sm text-divine-muted mb-2" for="{{ form.password.id_for_label }}">Password</label>
+        <input id="{{ form.password.id_for_label }}" name="{{ form.password.html_name }}" type="password" autocomplete="current-password" class="sdh-input w-full {% if form.password.errors %}border-red-500{% endif %}">
+        {% if form.password.errors %}<p class="mt-1 text-xs text-red-400">{{ form.password.errors.0 }}</p>{% endif %}
+      </div>
+
+      <button type="submit" class="w-full py-3 rounded-xl bg-gradient-to-r from-divine-gold to-divine-amber text-divine-deep font-semibold hover:opacity-95 transition">Login</button>
+    </form>
+
+    <p class="text-center text-sm text-divine-muted mt-6">
+      New user?
+      <a href="{% url 'users:register' %}" class="text-divine-gold hover:text-divine-amber">Create account</a>
+    </p>
+
+    <!-- Attribution -->
+    <p class="text-center text-[11px] mt-8 select-none"
+       style="color:rgba(136,136,170,0.4);letter-spacing:0.04em;">
+      Developed and Maintained by
+      <span style="color:rgba(168,85,247,0.55)">Garuda Netra</span>
+    </p>
+  </div>
+</div>
+{% endblock %}

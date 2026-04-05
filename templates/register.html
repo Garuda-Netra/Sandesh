@@ -1,0 +1,58 @@
+﻿{% extends "base.html" %}
+
+{% block title %}Register — Sandesh{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex items-center justify-center px-4 py-16">
+  <div class="w-full max-w-lg bg-divine-card border border-divine-border rounded-2xl p-8 shadow-divine">
+    <div class="text-center mb-8">
+      <div class="text-5xl mb-3 select-none"
+           style="color:#ffffff; -webkit-text-fill-color:#ffffff;
+                  filter: drop-shadow(0 0 18px rgba(255,255,255,0.3)) drop-shadow(0 0 36px rgba(168,85,247,0.2));">ॐ</div>
+      <h1 class="text-3xl font-semibold text-divine-text">Create <span class="sandesh-nav-brand font-bold">Sandesh</span> Account</h1>
+      <p class="text-divine-muted text-sm mt-2">Create an account to start messaging</p>
+    </div>
+
+    <form method="post" novalidate class="space-y-5">
+      {% csrf_token %}
+
+      {% if form.non_field_errors %}
+      <div class="p-3 rounded-lg bg-red-900/30 border border-red-700 text-red-200 text-sm">
+        {% for error in form.non_field_errors %}{{ error }}{% endfor %}
+      </div>
+      {% endif %}
+
+      <div>
+        <label class="block text-sm text-divine-muted mb-2" for="{{ form.username.id_for_label }}">Username</label>
+        <input id="{{ form.username.id_for_label }}" name="{{ form.username.html_name }}" value="{{ form.username.value|default:'' }}" type="text" autocomplete="username" class="sdh-input w-full {% if form.username.errors %}border-red-500{% endif %}">
+        {% if form.username.errors %}<p class="mt-1 text-xs text-red-400">{{ form.username.errors.0 }}</p>{% endif %}
+      </div>
+
+      <div>
+        <label class="block text-sm text-divine-muted mb-2" for="{{ form.email.id_for_label }}">Email</label>
+        <input id="{{ form.email.id_for_label }}" name="{{ form.email.html_name }}" value="{{ form.email.value|default:'' }}" type="email" autocomplete="email" class="sdh-input w-full {% if form.email.errors %}border-red-500{% endif %}">
+        {% if form.email.errors %}<p class="mt-1 text-xs text-red-400">{{ form.email.errors.0 }}</p>{% endif %}
+      </div>
+
+      <div>
+        <label class="block text-sm text-divine-muted mb-2" for="{{ form.password1.id_for_label }}">Password</label>
+        <input id="{{ form.password1.id_for_label }}" name="{{ form.password1.html_name }}" type="password" autocomplete="new-password" class="sdh-input w-full {% if form.password1.errors %}border-red-500{% endif %}">
+        {% if form.password1.errors %}<p class="mt-1 text-xs text-red-400">{{ form.password1.errors.0 }}</p>{% endif %}
+      </div>
+
+      <div>
+        <label class="block text-sm text-divine-muted mb-2" for="{{ form.password2.id_for_label }}">Confirm password</label>
+        <input id="{{ form.password2.id_for_label }}" name="{{ form.password2.html_name }}" type="password" autocomplete="new-password" class="sdh-input w-full {% if form.password2.errors %}border-red-500{% endif %}">
+        {% if form.password2.errors %}<p class="mt-1 text-xs text-red-400">{{ form.password2.errors.0 }}</p>{% endif %}
+      </div>
+
+      <button type="submit" class="w-full py-3 rounded-xl bg-gradient-to-r from-divine-gold to-divine-amber text-divine-deep font-semibold hover:opacity-95 transition">Create account</button>
+    </form>
+
+    <p class="text-center text-sm text-divine-muted mt-6">
+      Already registered?
+      <a href="{% url 'users:login' %}" class="text-divine-gold hover:text-divine-amber">Sign in</a>
+    </p>
+  </div>
+</div>
+{% endblock %}

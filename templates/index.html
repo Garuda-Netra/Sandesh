@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Sandesh{% endblock %}
+
+{% block content %}
+<!-- ══════════════════════════════════════════════════════════════
+     LANDING PAGE — Full-screen cinematic intro
+     Particle OM animation + Divine title card
+══════════════════════════════════════════════════════════════ -->
+
+<!-- Hero section -->
+<section class="relative z-10 min-h-screen flex flex-col items-center justify-center px-6 select-none">
+
+  <!-- OM Symbol — static white glyph ──────────────────── -->
+  <div class="relative flex items-center justify-center mb-10">
+    <div class="text-[8rem] leading-none select-none"
+         style="color:#ffffff;
+                -webkit-text-fill-color:#ffffff;
+                filter: drop-shadow(0 0 32px rgba(255,255,255,0.3)) drop-shadow(0 0 64px rgba(168,85,247,0.25));
+                font-family:'Inter',sans-serif; font-weight:700;">ॐ</div>
+  </div>
+
+  <!-- Title Block ──────────────────────────────────────────── -->
+  <div class="text-center space-y-4">
+
+    <!-- Sandesh -->
+    <h1 class="sandesh-title text-6xl sm:text-7xl font-bold tracking-widest">
+      Sandesh
+    </h1>
+
+    <!-- Divine Messenger — animated electric glow border -->
+    <div id="divineMessenger"
+         class="inline-block px-8 py-3 rounded-2xl text-lg sm:text-2xl font-semibold tracking-widest
+                text-divine-gold uppercase relative">
+      Messenger
+      <!-- Electric border layers -->
+      <span class="electric-border"></span>
+    </div>
+
+  </div>
+
+  <!-- Tagline ──────────────────────────────────────────────── -->
+  <p class="mt-8 text-divine-muted text-sm sm:text-base tracking-widest text-center max-w-md leading-relaxed">
+    Real-time · Secure · Modern messaging
+  </p>
+
+  <!-- CTA Buttons ──────────────────────────────────────────── -->
+  <div class="mt-12 flex flex-col sm:flex-row gap-4">
+    <a href="{% url 'users:register' %}"
+       class="group px-8 py-3.5 rounded-xl font-semibold text-base tracking-wide
+              bg-gradient-to-r from-divine-gold to-divine-amber text-divine-deep
+              hover:from-divine-amber hover:to-divine-saffron transition-all
+              shadow-glow-sm hover:shadow-divine transform hover:-translate-y-0.5 active:translate-y-0">
+      Begin Journey
+    </a>
+    <a href="{% url 'users:login' %}"
+       class="group px-8 py-3.5 rounded-xl font-semibold text-base tracking-wide
+              bg-divine-card border border-divine-border text-divine-muted
+              hover:border-divine-gold hover:text-divine-gold transition-all
+              hover:shadow-glow-sm transform hover:-translate-y-0.5 active:translate-y-0">
+      Sign In
+    </a>
+  </div>
+
+  <!-- Features strip ───────────────────────────────────────── -->
+  <div class="mt-20 grid grid-cols-2 sm:grid-cols-4 gap-6 max-w-2xl text-center">
+    {% for feat in features %}
+    {% empty %}
+    <!-- Rendered inline for landing page -->
+    {% endfor %}
+
+    <div class="feature-card p-4 rounded-xl bg-divine-card/50 border border-divine-border/60 hover:border-divine-gold/40 transition-all">
+      <div class="text-2xl mb-2">�</div>
+      <div class="text-xs text-divine-muted font-medium tracking-wide uppercase">Private<br>&amp; Secure</div>
+    </div>
+    <div class="feature-card p-4 rounded-xl bg-divine-card/50 border border-divine-border/60 hover:border-divine-gold/40 transition-all">
+      <div class="text-2xl mb-2">⚡</div>
+      <div class="text-xs text-divine-muted font-medium tracking-wide uppercase">Real-time<br>WebSocket</div>
+    </div>
+    <div class="feature-card p-4 rounded-xl bg-divine-card/50 border border-divine-border/60 hover:border-divine-gold/40 transition-all">
+      <div class="text-2xl mb-2">📹</div>
+      <div class="text-xs text-divine-muted font-medium tracking-wide uppercase">Voice &amp;<br>Video WebRTC</div>
+    </div>
+    <div class="feature-card p-4 rounded-xl bg-divine-card/50 border border-divine-border/60 hover:border-divine-gold/40 transition-all">
+      <div class="text-2xl mb-2">💬</div>
+      <div class="text-xs text-divine-muted font-medium tracking-wide uppercase">Instant<br>Messaging</div>
+    </div>
+  </div>
+
+</section>
+
+<!-- Footer -->
+<footer class="relative z-10 text-center py-8">
+  <p class="text-divine-muted text-xs tracking-widest uppercase">
+    Sandesh &copy; 2026
+  </p>
+</footer>
+{% endblock %}
+
+
+{% block extra_js %}{% endblock %}
